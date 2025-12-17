@@ -9,9 +9,7 @@ plugins {
 
 android {
     namespace = "com.example.aicalorietracker"
-    compileSdk {
-        version = release(36)
-    }
+    compileSdk =35
 
     defaultConfig {
         applicationId = "com.example.aicalorietracker"
@@ -26,8 +24,11 @@ android {
             localProperties.load(localPropertiesFile.inputStream())
         }
 
+//        buildConfigField("String","GEMINI_API_KEY","\"TestKey123\"")
+
         val apiKey = localProperties.getProperty("GEMINI_API_KEY") ?: ""
-        buildConfigField("String", "GEMINI_API_KEY", "\"\"$apiKey\"\"")
+        buildConfigField("String", "GEMINI_API_KEY", "\"${apiKey}\"")
+
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -59,8 +60,10 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
     implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
-
+    implementation("androidx.compose.material:material-icons-extended")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation("androidx.compose.material3:material3:1.4.0-alpha10")
     val room_version = "2.6.1"
     implementation("androidx.room:room-runtime:$room_version")
     implementation("androidx.room:room-ktx:$room_version")

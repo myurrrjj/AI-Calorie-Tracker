@@ -1,6 +1,9 @@
-package com.example.aicalorietracker.data
+package com.example.aicalorietracker.network
 
 import com.example.aicalorietracker.BuildConfig
+import com.example.aicalorietracker.local.MacroNutrients
+import com.example.aicalorietracker.local.MealLog
+import com.example.aicalorietracker.local.MicroNutrients
 import com.google.ai.client.generativeai.GenerativeModel
 import com.google.ai.client.generativeai.type.generationConfig
 import org.json.JSONObject
@@ -8,15 +11,15 @@ import org.json.JSONObject
 class AiService {
 
     private val model = GenerativeModel(
-        modelName = "gemini-1.5-flash",
+
+        modelName = "gemini-2.5-flash",
         apiKey = BuildConfig.GEMINI_API_KEY,
         generationConfig = generationConfig {
             temperature = 0.7f
             responseMimeType = "application/json"
 
 
-        }
-    )
+        })
 
     suspend fun analyseMeal(userText: String): Result<MealLog> {
         return try {
@@ -65,8 +68,7 @@ class AiService {
         val macrosJson = json.optJSONObject("macros")
         val macros = MacroNutrients(
             calories = json.optInt(
-                "calories",
-                0
+                "calories", 0
             ),
             protein = macrosJson?.optInt("protein") ?: 0,
             carbs = macrosJson?.optInt("carbs") ?: 0,

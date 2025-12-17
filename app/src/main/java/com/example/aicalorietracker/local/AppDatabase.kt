@@ -1,4 +1,4 @@
-package com.example.aicalorietracker.data
+package com.example.aicalorietracker.local
 
 import android.content.Context
 import androidx.room.Database

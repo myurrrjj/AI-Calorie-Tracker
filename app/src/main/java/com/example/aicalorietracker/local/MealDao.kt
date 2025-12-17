@@ -1,6 +1,7 @@
-package com.example.aicalorietracker.data
+package com.example.aicalorietracker.local
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
@@ -10,6 +11,12 @@ interface MealDao {
     @Insert
     suspend fun insertMeal(meal: MealLog)
 
+    @Delete
+    suspend fun deleteMeal(meal: MealLog)
+
+    @Query("SELECT * FROM meal_logs ORDER BY timeStamp DESC")
+    fun getAllMeals() : Flow<List<MealLog>>
+
     @Query("SELECT * FROM meal_logs WHERE timeStamp BETWEEN :startTime AND :endTime ORDER BY timeStamp ASC")
     fun getMealsForDay(startTime:Long,endTime: Long): Flow<List<MealLog>>
 
@@ -18,7 +25,3 @@ interface MealDao {
 
 
 }
-
-
-
-
