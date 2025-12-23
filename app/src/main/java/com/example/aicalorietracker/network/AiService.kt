@@ -24,33 +24,34 @@ class AiService {
     suspend fun analyseMeal(userText: String): Result<MealLog> {
         return try {
             val prompt = """
-                You are a nutrition expert. Analyze this meal description: "$userText".
-                
-                Return a JSON object with the following structure:
-                {
-                    "aiResponse": "A friendly summary of what was logged (e.g., 'Logged 2 eggs and toast')",
-                    "calories": Integer (Total calories),
-                    "macros": { 
-                        "protein": Integer (grams), 
-                        "carbs": Integer (grams), 
-                        "fat": Integer (grams), 
-                        "fiber": Integer (grams), 
-                        "sugar": Integer (grams) 
-                    },
-                    "micros": { 
-                        "vitaminA": Double, 
-                        "vitaminC": Double, 
-                        "vitaminD": Double, 
-                        "iron": Double, 
-                        "calcium": Double, 
-                        "sodium": Double, 
-                        "potassium": Double 
-                    }
-                }
-                
-                Estimate values if exact data isn't clear. 
-                If the input is not food, return 0 for all numbers and a polite message in aiResponse saying you couldn't identify the food.
-            """.trimIndent()
+Analyze this meal description: "$userText".
+
+Return ONLY valid JSON in this exact format:
+{
+  "aiResponse": "",
+  "calories": 0,
+  "macros": {
+    "protein": 0,
+    "carbs": 0,
+    "fat": 0,
+    "fiber": 0,
+    "sugar": 0
+  },
+  "micros": {
+    "vitaminA": 0.0,
+    "vitaminC": 0.0,
+    "vitaminD": 0.0,
+    "iron": 0.0,
+    "calcium": 0.0,
+    "sodium": 0.0,
+    "potassium": 0.0
+  }
+}
+
+Estimate values when needed.
+If input is not food, return all zeros and a polite aiResponse.
+""".trimIndent()
+
 
             val response = model.generateContent(prompt)
             val jsonString = response.text ?: throw Exception("Empty response from AI")

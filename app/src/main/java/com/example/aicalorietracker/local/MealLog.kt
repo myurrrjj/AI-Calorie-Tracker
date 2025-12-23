@@ -2,6 +2,7 @@ package com.example.aicalorietracker.local
 
 import androidx.room.Embedded
 import androidx.room.Entity
+import androidx.room.Ignore
 import androidx.room.PrimaryKey
 
 @Entity(tableName = "meal_logs")
@@ -16,8 +17,31 @@ data class MealLog(
     val macros: MacroNutrients,
 
     @Embedded
-    val micros: MicroNutrients
-)
+    val micros: MicroNutrients,
+
+    @Ignore
+    val isAnalysing: Boolean = false
+
+
+) {
+    constructor(
+        id: Int,
+        timeStamp: Long,
+        userRequest: String,
+        aiResponse: String,
+        macros: MacroNutrients,
+        micros: MicroNutrients
+    ) : this(
+        id = id,
+        timeStamp = timeStamp,
+        userRequest = userRequest,
+        aiResponse = aiResponse,
+        macros = macros,
+        micros = micros,
+        isAnalysing = false
+
+    )
+}
 
 data class MacroNutrients(
     val calories: Int = 0,
@@ -25,7 +49,7 @@ data class MacroNutrients(
     val carbs: Int = 0,
     val fat: Int = 0,
     val fiber: Int = 0,
-    val sugar: Int=0
+    val sugar: Int = 0
 )
 
 data class MicroNutrients(

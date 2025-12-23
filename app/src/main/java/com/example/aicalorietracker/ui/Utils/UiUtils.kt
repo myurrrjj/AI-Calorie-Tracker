@@ -1,29 +1,29 @@
 package com.example.aicalorietracker.ui.Utils
 
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.waitForUpOrCancellation
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import android.view.HapticFeedbackConstants // Import this
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalView // Import this
 
 enum class ButtonState { Idle, Pressed }
 
 fun Modifier.bouncyClick(
+    onLongPress: (() -> Unit)? = null,
     scaleDown: Float = 0.95f,
     onClick: () -> Unit
 ) = composed {
     var currentState by remember { mutableStateOf(ButtonState.Idle) }
-    val haptic = LocalHapticFeedback.current
+
+    val view = LocalView.current
+
+    val currentOnClick by rememberUpdatedState(onClick)
+    val currentOnLongPress by rememberUpdatedState(onLongPress)
+
     val scale by animateFloatAsState(
         targetValue = if (currentState == ButtonState.Pressed) scaleDown else 1f,
         animationSpec = spring(
@@ -32,25 +32,29 @@ fun Modifier.bouncyClick(
         ),
         label = "Button Scale"
     )
+
     this
         .graphicsLayer {
             scaleX = scale
             scaleY = scale
         }
         .pointerInput(Unit) {
-            awaitPointerEventScope {
-                while (true) {
-                    awaitFirstDown(requireUnconsumed = false)
-                    currentState = ButtonState.Pressed
-                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    val up = waitForUpOrCancellation()
-                    currentState = ButtonState.Idle
-                    if (up != null) {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        onClick()
-                    }
-                }
-            }
-        }
+            detectTapGestures(
+                onPress = {
+//                    view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
+                    currentState = ButtonState.Pressed
+                    tryAwaitRelease()
+                    currentState = ButtonState.Idle
+                },
+                onLongPress = {
+                    view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                    currentOnLongPress?.invoke()
+                },
+                onTap = {
+                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                    currentOnClick()
+                }
+            )
+        }
 }

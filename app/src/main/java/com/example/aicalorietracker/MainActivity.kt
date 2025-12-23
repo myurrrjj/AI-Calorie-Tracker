@@ -9,7 +9,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.aicalorietracker.ui.DashboardScreen
+import com.example.aicalorietracker.ui.DashboardScreen2
 import com.example.aicalorietracker.ui.MealViewModel
 import com.example.aicalorietracker.ui.theme.AICalorieTrackerTheme
 
@@ -27,7 +27,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                     val viewModel: MealViewModel = viewModel(factory = MealViewModel.Factory)
 
-                    DashboardScreen(viewModel = viewModel)
+                    DashboardScreen2(viewModel = viewModel)
                 }
             }
         }
