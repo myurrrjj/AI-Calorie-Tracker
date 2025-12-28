@@ -1,5 +1,6 @@
 package com.example.aicalorietracker.network
 
+import android.R.attr.prompt
 import com.example.aicalorietracker.BuildConfig
 import com.example.aicalorietracker.local.MacroNutrients
 import com.example.aicalorietracker.local.MealLog
@@ -15,7 +16,10 @@ class AiService {
         modelName = "gemini-2.5-flash",
         apiKey = BuildConfig.GEMINI_API_KEY,
         generationConfig = generationConfig {
-            temperature = 0.7f
+
+            temperature = 0.2f
+            topK = 32
+            topP = 0.95f
             responseMimeType = "application/json"
 
 

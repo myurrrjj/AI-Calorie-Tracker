@@ -5,7 +5,9 @@ import android.R.string.no
 import com.example.aicalorietracker.local.MealDao
 import com.example.aicalorietracker.local.MealLog
 import com.example.aicalorietracker.network.AiService
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
@@ -26,26 +28,26 @@ class OfflineMealRepository(private val aiService: AiService, private val mealDa
     override fun getMealHistory(): Flow<List<MealLog>> {
         return mealDao.getAllMeals()
     }
+    override suspend fun addMealLog(userText: String, date: LocalDate): Result<MealLog> {
+        return withContext(Dispatchers.IO) {
+            val result = aiService.analyseMeal(userText)
+            result.map { mealLog ->
+                val nowTime = LocalTime.now()
+                val correctTimeStamp = date.atTime(nowTime)
+                    .atZone(ZoneId.systemDefault())
+                    .toInstant()
+                    .toEpochMilli()
+                val adjustedMeal = mealLog.copy(timeStamp = correctTimeStamp)
 
-    override suspend fun addMealLog(userText: String,date: LocalDate): Result<MealLog> {
-
-        val result = aiService.analyseMeal(userText)
-        return result.map { mealLog ->
-            val nowTime = LocalTime.now()
-            val correctTimeStamp = date.atTime(nowTime)
-                .atZone(ZoneId.systemDefault())
-                .toInstant()
-                .toEpochMilli()
-            val adjustedMeal = mealLog.copy(timeStamp = correctTimeStamp)
-            mealDao.insertMeal(adjustedMeal)
-            adjustedMeal
+                mealDao.insertMeal(adjustedMeal)
+                adjustedMeal
+            }
         }
-
     }
-
     override suspend fun deleteLog(mealLog: MealLog) {
-        mealDao.deleteMeal(mealLog)
-    }
+        withContext(Dispatchers.IO){
+            mealDao.deleteMeal(mealLog)
+        }    }
 
     override fun getMealsForDay(
         startTime: Long,

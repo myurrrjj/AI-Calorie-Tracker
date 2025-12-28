@@ -41,6 +41,9 @@ class MealViewModel(
     private val preferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
 
+    private val dayFlowCache = mutableMapOf<LocalDate,Flow<MealUiState>>()
+
+
     private val _errorMessage = MutableStateFlow<String?>(null)
     private val _pendingMeals = MutableStateFlow<List<MealLog>>(emptyList())
     private val _targetCalories = MutableStateFlow(preferencesRepository.getTargetCalories())
@@ -49,11 +52,12 @@ class MealViewModel(
         get() = LocalDate.now()
 
     fun getDayFlow(date: LocalDate): Flow<MealUiState> {
+        return dayFlowCache.getOrPut(date){
         val startOfDay = date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
         val endOfDay =
             date.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
-        return combine(
+         combine(
             repository.getMealsForDay(startOfDay, endOfDay),
             _targetCalories, _pendingMeals,
             _errorMessage
@@ -72,7 +76,7 @@ class MealViewModel(
                 currentDate = date,
                 targetCalories = target
             )
-        }
+        }}
     }
 
     fun updateTargetCalories(newTarget:Int){
