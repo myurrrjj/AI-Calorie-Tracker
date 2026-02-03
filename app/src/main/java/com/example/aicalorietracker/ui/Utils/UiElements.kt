@@ -1,4 +1,4 @@
-package com.example.aicalorietracker.ui
+package com.example.aicalorietracker.ui.Utils
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
@@ -89,7 +89,8 @@ import androidx.compose.ui.text.style.BaselineShift
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.aicalorietracker.local.MealLog
-import com.example.aicalorietracker.ui.Utils.bouncyClick
+import com.example.aicalorietracker.ui.MealUiState
+import com.example.aicalorietracker.ui.MealViewModel
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
@@ -107,9 +108,7 @@ fun DashboardScreen(
 
     val startIndex = Int.MAX_VALUE / 2
     val pagerState = rememberPagerState(
-        initialPage = startIndex,
-        pageCount = { Int.MAX_VALUE }
-    )
+        initialPage = startIndex, pageCount = { Int.MAX_VALUE })
     val scope = rememberCoroutineScope()
 
     fun getDateForPage(page: Int): LocalDate {
@@ -126,9 +125,7 @@ fun DashboardScreen(
 
     if (showTargetDialog) {
         val currentTarget =
-            viewModel.getDayFlow(viewModel.today)
-                .collectAsState(MealUiState())
-                .value.targetCalories
+            viewModel.getDayFlow(viewModel.today).collectAsState(MealUiState()).value.targetCalories
 
         EditTargetDialog(
             currentTarget = currentTarget,
@@ -136,72 +133,56 @@ fun DashboardScreen(
             onConfirm = { newTarget ->
                 viewModel.updateTargetCalories(newTarget)
                 showTargetDialog = false
-            }
-        )
+            })
     }
 
     if (showDatePicker) {
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        datePickerState.selectedDateMillis?.let { millis ->
-                            val selectedDate =
-                                Instant.ofEpochMilli(millis)
-                                    .atZone(ZoneId.systemDefault())
-                                    .toLocalDate()
+        DatePickerDialog(onDismissRequest = { showDatePicker = false }, confirmButton = {
+            TextButton(
+                onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        val selectedDate =
+                            Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault())
+                                .toLocalDate()
 
-                            val daysDiff = ChronoUnit.DAYS.between(
-                                viewModel.today,
-                                selectedDate
+                        val daysDiff = ChronoUnit.DAYS.between(
+                            viewModel.today, selectedDate
+                        )
+
+                        scope.launch {
+                            pagerState.scrollToPage(
+                                startIndex + daysDiff.toInt()
                             )
-
-                            scope.launch {
-                                pagerState.scrollToPage(
-                                    startIndex + daysDiff.toInt()
-                                )
-                            }
                         }
-                        showDatePicker = false
                     }
-                ) {
-                    Text("OK")
-                }
+                    showDatePicker = false
+                }) {
+                Text("OK")
             }
-        ) {
+        }) {
             DatePicker(state = datePickerState)
         }
     }
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-        topBar = {
+        containerColor = MaterialTheme.colorScheme.background, topBar = {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(
-                        top = 48.dp,
-                        start = 24.dp,
-                        end = 24.dp,
-                        bottom = 16.dp
+                        top = 48.dp, start = 24.dp, end = 24.dp, bottom = 16.dp
                     ),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
                     Text(
-                        text = if (currentDate == viewModel.today)
-                            "Today's Fuel"
-                        else
-                            currentDate.format(
-                                DateTimeFormatter.ofPattern("EEEE, MMM d")
-                            ),
-                        style = MaterialTheme.typography.headlineLarge.copy(
-                            fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = (-1).sp
-                        ),
-                        color = MaterialTheme.colorScheme.onBackground
+                        text = if (currentDate == viewModel.today) "Today's Fuel"
+                        else currentDate.format(
+                            DateTimeFormatter.ofPattern("EEEE, MMM d")
+                        ), style = MaterialTheme.typography.headlineLarge.copy(
+                            fontWeight = FontWeight.ExtraBold, letterSpacing = (-1).sp
+                        ), color = MaterialTheme.colorScheme.onBackground
                     )
                 }
 
@@ -214,26 +195,23 @@ fun DashboardScreen(
                             scope.launch {
                                 pagerState.animateScrollToPage(startIndex)
                             }
-                        }
-                    )
+                        })
                 ) {
                     Box(Modifier.padding(12.dp)) {
                         Icon(
-                            Icons.Default.DateRange,
-                            contentDescription = "Calendar"
+                            Icons.Default.DateRange, contentDescription = "Calendar"
                         )
                     }
                 }
             }
-        }
-    ) { paddingValues ->
+        }) { paddingValues ->
         SharedTransitionLayout {
 
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+            ) {
 
 
 //                AnimatedContent(
@@ -246,43 +224,44 @@ fun DashboardScreen(
 //
 //                    }
 //                }
-            AnimatedVisibility(visible = true,enter = EnterTransition.None, exit = ExitTransition.None){
-                HorizontalPager(
-                    state = pagerState,
-                    modifier = Modifier.fillMaxSize()
-                ) { page ->
-                    val pageDate = getDateForPage(page)
-
-                    val pageState by viewModel.getDayFlow(pageDate)
-                        .collectAsState(initial = MealUiState())
-
-                    DayView(
-                        state = pageState,
-                        onDelete = { viewModel.deleteMeal(it) },
-                        onEditGoal = { showTargetDialog = true },
-                        onMealLongClick = { activeMeal = it },
-                        sharedTransitionScope = this@SharedTransitionLayout,
-                        animatedVisibilityScope = this@AnimatedVisibility
-                    )
-                }
-            }
-
-
-            AnimatedVisibility(
-                visible = activeMeal != null,
-                enter = fadeIn(tween(300)),
-                exit = fadeOut(tween(300))
+                AnimatedVisibility(
+                    visible = true, enter = EnterTransition.None, exit = ExitTransition.None
                 ) {
-                val anim = this@AnimatedVisibility
+                    HorizontalPager(
+                        state = pagerState, modifier = Modifier.fillMaxSize()
+                    ) { page ->
+                        val pageDate = getDateForPage(page)
 
-                activeMeal?.let { meal->
-                    MealDetailOverlay(
-                        meal = meal,
-                        onDismiss = { activeMeal = null },
-                        sharedTransitionScope = this@SharedTransitionLayout,
-                        animatedVisibilityScope = this@AnimatedVisibility
-                    )
+                        val pageState by viewModel.getDayFlow(pageDate)
+                            .collectAsState(initial = MealUiState())
+
+                        DayView(
+                            state = pageState,
+                            onDelete = { viewModel.deleteMeal(it) },
+                            onEditGoal = { showTargetDialog = true },
+                            onMealLongClick = { activeMeal = it },
+                            sharedTransitionScope = this@SharedTransitionLayout,
+                            animatedVisibilityScope = this@AnimatedVisibility
+                        )
+                    }
                 }
+
+
+                AnimatedVisibility(
+                    visible = activeMeal != null,
+                    enter = fadeIn(tween(300)),
+                    exit = fadeOut(tween(300))
+                ) {
+                    val anim = this@AnimatedVisibility
+
+                    activeMeal?.let { meal ->
+                        MealDetailOverlay(
+                            meal = meal,
+                            onDismiss = { activeMeal = null },
+                            sharedTransitionScope = this@SharedTransitionLayout,
+                            animatedVisibilityScope = this@AnimatedVisibility
+                        )
+                    }
 
 
 //
@@ -290,22 +269,22 @@ fun DashboardScreen(
 
                 }
 
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(24.dp)
-            ) {
-                InputArea(
-                    viewModel = viewModel,
-                    isLoading = viewModel.getDayFlow(currentDate)
-                        .collectAsState(MealUiState())
-                        .value.isLoading,
-                    targetDate = currentDate
-                )
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(24.dp)
+                ) {
+                    InputArea(
+                        viewModel = viewModel,
+                        isLoading = viewModel.getDayFlow(currentDate)
+                            .collectAsState(MealUiState()).value.isLoading,
+                        targetDate = currentDate
+                    )
+                }
             }
         }
     }
-}}
+}
 
 
 @Composable
@@ -325,19 +304,18 @@ fun MealDetailOverlay(
                 onClick = onDismiss
             )
     ) {
-            Surface(
-                modifier = Modifier
-                    .padding(bottom = 120.dp, start = 24.dp, end = 24.dp, top = 24.dp)
+        Surface(
+            modifier = Modifier.padding(bottom = 120.dp, start = 24.dp, end = 24.dp, top = 24.dp)
 //                    .padding(top = 80.dp)
 
 
-                   ,
-                shape = RoundedCornerShape(28.dp),
-                color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 6.dp
+            ,
+            shape = RoundedCornerShape(28.dp),
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 6.dp
 
-            ) {
-                with(sharedTransitionScope) {
+        ) {
+            with(sharedTransitionScope) {
 
                 Column(
                     modifier = Modifier
@@ -502,7 +480,8 @@ fun MealDetailOverlay(
             }
         }
 
-}}
+    }
+}
 
 @Composable
 fun MacroCard(
@@ -767,11 +746,15 @@ fun MealItemCard(
 }
 
 
-
-
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun CalorieProgressCard(currentCalories: Int, targetCalories: Int, onEditClick: () -> Unit) {
+fun CalorieProgressCard(
+    currentCalories: Int,
+    targetCalories: Int,
+    onEditClick: () -> Unit,
+    activeMealId: MealLog?,
+    onClick: () -> Unit,
+) {
     val progress = (currentCalories.toFloat() / targetCalories.toFloat())
     val visualProgress = progress.coerceIn(0f, 1f)
     val percentage = (progress * 100).toInt()
@@ -794,16 +777,16 @@ fun CalorieProgressCard(currentCalories: Int, targetCalories: Int, onEditClick: 
     } else {
         remember { mutableFloatStateOf(1f) }
     }
-
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .height(220.dp)
-            .bouncyClick { },
+            .bouncyClick(onClick = onClick),
         shape = RoundedCornerShape(32.dp),
         color = MaterialTheme.colorScheme.primaryContainer,
         tonalElevation = 8.dp
     ) {
+
         Row(
             modifier = Modifier.padding(24.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -827,9 +810,13 @@ fun CalorieProgressCard(currentCalories: Int, targetCalories: Int, onEditClick: 
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
-                    text = "$currentCalories", style = MaterialTheme.typography.displayMedium.copy(
-                        fontWeight = FontWeight.Black, fontSize = 48.sp, letterSpacing = (-2).sp
-                    ), color = MaterialTheme.colorScheme.onPrimaryContainer
+                    text = "$currentCalories",
+                    style = MaterialTheme.typography.displayMedium.copy(
+                        fontWeight = FontWeight.Black,
+                        fontSize = 48.sp,
+                        letterSpacing = (-2).sp
+                    ),
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
 
                 Text(
@@ -843,7 +830,8 @@ fun CalorieProgressCard(currentCalories: Int, targetCalories: Int, onEditClick: 
             val wavyStrokeWidth = 4.dp
             val paddingCorrection = (backgroundStrokeWidth - wavyStrokeWidth) / 2
             Box(
-                contentAlignment = Alignment.Center, modifier = Modifier.scale(pulseScale)
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.scale(pulseScale)
             ) {
                 CircularProgressIndicator(
                     progress = { 1f },
@@ -869,7 +857,6 @@ fun CalorieProgressCard(currentCalories: Int, targetCalories: Int, onEditClick: 
 
                 )
 
-                // Percentage Text
                 Text(
                     text = "$percentage%",
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black),
@@ -879,6 +866,7 @@ fun CalorieProgressCard(currentCalories: Int, targetCalories: Int, onEditClick: 
         }
     }
 }
+
 
 @Composable
 fun DayView(
@@ -903,7 +891,7 @@ fun DayView(
     ) {
         Spacer(modifier = Modifier.height(16.dp))
 
-        CalorieProgressCard(animatedCalories, state.targetCalories, onEditClick = onEditGoal)
+//        CalorieProgressCard(animatedCalories, state.targetCalories, onEditClick = onEditGoal)
 
         Spacer(Modifier.height(32.dp))
 

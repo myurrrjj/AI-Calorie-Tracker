@@ -12,6 +12,7 @@ import androidx.compose.ui.platform.LocalView // Import this
 
 enum class ButtonState { Idle, Pressed }
 
+@Suppress("AvoidComposed")
 fun Modifier.bouncyClick(
     onLongPress: (() -> Unit)? = null,
     scaleDown: Float = 0.95f,

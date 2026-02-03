@@ -1,13 +1,16 @@
-package com.example.aicalorietracker.ui
+package com.example.aicalorietracker.ui.homescreen
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -25,6 +28,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -44,6 +49,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -59,11 +66,13 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.WavyProgressIndicatorDefaults
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -71,12 +80,24 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.aicalorietracker.local.MealLog
+import com.example.aicalorietracker.ui.DailyAnalyticsScreen
+import com.example.aicalorietracker.ui.Utils.CalorieProgressCard
+import com.example.aicalorietracker.ui.Utils.EditTargetDialog
+import com.example.aicalorietracker.ui.Utils.InputArea
+import com.example.aicalorietracker.ui.Utils.MacroCard
+import com.example.aicalorietracker.ui.MealUiState
+import com.example.aicalorietracker.ui.MealViewModel
+import com.example.aicalorietracker.ui.Utils.MicroRowItem
 import com.example.aicalorietracker.ui.Utils.bouncyClick
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -93,18 +114,18 @@ private val HEADER_DATE_FORMATTER = DateTimeFormatter.ofPattern("EEEE, MMM d")
 fun DashboardScreen2(
     viewModel: MealViewModel
 ) {
+    var showDailyAnalytics by remember { mutableStateOf(false) }
+
     var activeMeal by remember { mutableStateOf<MealLog?>(null) }
     BackHandler(enabled = activeMeal != null) {
         activeMeal = null
     }
 
-    // Pager setup
     val startIndex = Int.MAX_VALUE / 2
     val pagerState = rememberPagerState(
         initialPage = startIndex, pageCount = { Int.MAX_VALUE })
     val scope = rememberCoroutineScope()
 
-    // Date Helper
     fun getDateForPage(page: Int): LocalDate {
         val diff = page - startIndex
         return viewModel.today.plusDays(diff.toLong())
@@ -114,21 +135,17 @@ fun DashboardScreen2(
 
     var showDatePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState()
-    // ... inside DashboardScreen2 ...
 
     val snackbarHostState = remember { SnackbarHostState() }
 
-// We need to observe the state of the CURRENT page to catch errors
-    val currentUiState by viewModel.getDayFlow(currentDate).collectAsState(MealUiState())
+    val currentUiState by viewModel.getDayFlow(currentDate).collectAsStateWithLifecycle(MealUiState())
 
-// Listen for errors and show Snackbar
     LaunchedEffect(currentUiState.errorMessage) {
         currentUiState.errorMessage?.let { error ->
             snackbarHostState.showSnackbar(
                 message = error,
                 withDismissAction = true
             )
-//            viewModel.errorShown() // Reset error in ViewModel
         }
     }
 
@@ -148,11 +165,10 @@ fun DashboardScreen2(
         }) { DatePicker(state = datePickerState) }
     }
 
-    // Goal Dialog Logic
     var showTargetDialog by remember { mutableStateOf(false) }
     if (showTargetDialog) {
         val currentTarget =
-            viewModel.getDayFlow(viewModel.today).collectAsState(MealUiState()).value.targetCalories
+            viewModel.getDayFlow(viewModel.today).collectAsStateWithLifecycle(MealUiState()).value.targetCalories
         EditTargetDialog(
             currentTarget = currentTarget,
             onDismiss = { showTargetDialog = false },
@@ -164,7 +180,8 @@ fun DashboardScreen2(
 
     SharedTransitionLayout {
         Box(modifier = Modifier.fillMaxSize()) {
-            Scaffold(snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+            Scaffold(
+                snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
                 containerColor = MaterialTheme.colorScheme.background, topBar = {
                     Row(
                         modifier = Modifier
@@ -197,7 +214,8 @@ fun DashboardScreen2(
                                     scope.launch {
                                         pagerState.animateScrollToPage(startIndex)
                                     }
-                                })) {
+                                })
+                        ) {
                             Box(Modifier.padding(12.dp)) {
                                 Icon(Icons.Default.DateRange, contentDescription = "Calendar")
                             }
@@ -214,7 +232,7 @@ fun DashboardScreen2(
                     ) { page ->
                         val pageDate = getDateForPage(page)
                         val pageState by viewModel.getDayFlow(pageDate)
-                            .collectAsState(initial = MealUiState())
+                            .collectAsState(MealUiState())
 
                         DayView2(
                             state = pageState,
@@ -223,6 +241,7 @@ fun DashboardScreen2(
                             onDelete = { viewModel.deleteMeal(it) },
                             onEditGoal = { showTargetDialog = true },
                             onMealLongClick = { activeMeal = it },
+                            onCardClick = {showDailyAnalytics = true}
 //                            onDismiss = TODO()
                         )
                     }
@@ -235,7 +254,7 @@ fun DashboardScreen2(
                         InputArea(
                             viewModel = viewModel,
                             isLoading = viewModel.getDayFlow(currentDate)
-                                .collectAsState(MealUiState()).value.isLoading,
+                                .collectAsStateWithLifecycle(MealUiState()).value.isLoading,
                             targetDate = currentDate
                         )
                     }
@@ -246,6 +265,10 @@ fun DashboardScreen2(
                 meal = activeMeal,
                 onDismiss = { activeMeal = null },
             )
+
+            if(showDailyAnalytics){
+                DailyAnalyticsScreen(state = currentUiState, onDismiss = {showDailyAnalytics = false})
+            }
 
         }
     }
@@ -258,7 +281,8 @@ fun DayView2(
     onDelete: (MealLog) -> Unit,
     onEditGoal: () -> Unit,
     onMealLongClick: (MealLog) -> Unit,
-    sharedTransitionScope: SharedTransitionScope
+    sharedTransitionScope: SharedTransitionScope,
+    onCardClick: () -> Unit
 ) {
     val animatedCalories by animateIntAsState(
         targetValue = state.totalCalories,
@@ -272,9 +296,13 @@ fun DayView2(
             .padding(horizontal = 16.dp)
     ) {
         Spacer(modifier = Modifier.height(16.dp))
-
-        CalorieProgressCard(animatedCalories, state.targetCalories, onEditClick = onEditGoal)
-
+        CalorieProgressCard(
+            currentCalories = animatedCalories,
+            targetCalories = state.targetCalories,
+            onEditClick = onEditGoal,
+            activeMealId = activeMealId,
+            onClick = onCardClick
+        )
         Spacer(Modifier.height(32.dp))
 
         Text(
@@ -329,11 +357,11 @@ fun DayView2(
                                     modifier = Modifier
                                         .wrapContentWidth()
                                         .sharedBounds(
-                                        sharedContentState = rememberSharedContentState(key = "userReq-${meal.id}"),
+                                            sharedContentState = rememberSharedContentState(key = "userReq-${meal.id}"),
 
-                                        animatedVisibilityScope = this@AnimatedVisibility,
-                                        resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds()
-                                    ),
+                                            animatedVisibilityScope = this@AnimatedVisibility,
+                                            resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds()
+                                        ),
                                 )
                             }
                         }
@@ -346,6 +374,119 @@ fun DayView2(
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalSharedTransitionApi::class)
+@Composable
+fun CalorieProgressStrip(
+    currentCalories: Int,
+    targetCalories: Int,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedContentScope: AnimatedContentScope
+) {
+    val progress = (currentCalories.toFloat() / targetCalories.toFloat())
+    val visualProgress = progress.coerceIn(0f, 1f)
+    val percentage = (progress * 100).toInt()
+
+    val animatedProgress by animateFloatAsState(
+        targetValue = visualProgress,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "Progress"
+    )
+
+    val infiniteTransition = rememberInfiniteTransition(label = "Pulse")
+    val pulseScale by if (progress > 0.8f) {
+        infiniteTransition.animateFloat(
+            initialValue = 1f,
+            targetValue = 1.05f,
+            animationSpec = infiniteRepeatable(
+                animation = if (percentage < 120) tween(1000) else if (percentage in 120..150) tween(500) else tween(100),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "Pulse"
+        )
+    } else {
+        remember { mutableFloatStateOf(1f) }
+    }
+
+    with(sharedTransitionScope) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(72.dp)
+                .bouncyClick {  }
+                .sharedBounds(
+                    rememberSharedContentState(key = "CalorieProgressCard"),
+                    animatedVisibilityScope = animatedContentScope
+                ),
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.primaryContainer,
+            tonalElevation = 8.dp
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text(
+                        text = "$currentCalories",
+                        style = MaterialTheme.typography.headlineMedium.copy(
+                            fontWeight = FontWeight.Black,
+                            letterSpacing = (-1).sp
+                        ),
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "/ $targetCalories kcal",
+                        style = MaterialTheme.typography.titleSmall.copy(
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f),
+                        modifier = Modifier.padding(bottom = 4.dp) // Align baseline visually
+                    )
+                }
+
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .graphicsLayer { scaleX = pulseScale; scaleY = pulseScale }
+                        .aspectRatio(1f) // Keep it circular
+                        .fillMaxHeight()
+                ) {
+                    CircularProgressIndicator(
+                        progress = { 1f },
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(0.1f),
+                        strokeWidth = 8.dp,
+                        trackColor = Color.Transparent
+                    )
+
+                    CircularWavyProgressIndicator(
+                        progress = { animatedProgress },
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(4.dp),
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = Color.Transparent,
+                        trackStroke = WavyProgressIndicatorDefaults.circularTrackStroke,
+                        amplitude = WavyProgressIndicatorDefaults.indicatorAmplitude,
+                        wavelength = 10.dp,
+                        stroke = Stroke(width = 8.dp.value)
+                    )
+
+                    Text(
+                        text = "$percentage%",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Black),
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
+        }
+    }
+}
 
 @Composable
 fun SharedTransitionScope.MealDetailOverlay2(
@@ -362,7 +503,7 @@ fun SharedTransitionScope.MealDetailOverlay2(
         Box(
             Modifier
                 .fillMaxSize()
-                .padding(start = 16.dp, end = 16.dp, top = 172.dp,bottom =124.dp),
+                .padding(start = 16.dp, end = 16.dp, top = 172.dp, bottom = 124.dp),
             contentAlignment = Alignment.Center
         ) {
             if (meal != null) {
@@ -400,11 +541,11 @@ fun SharedTransitionScope.MealDetailOverlay2(
                                     text = meal.userRequest, modifier = Modifier
                                         .wrapContentWidth()
                                         .sharedBounds(
-                                        sharedContentState = rememberSharedContentState("userReq-${meal.id}"),
+                                            sharedContentState = rememberSharedContentState("userReq-${meal.id}"),
 
 
-                                        animatedVisibilityScope = this@AnimatedContent,
-                                        resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds()
+                                            animatedVisibilityScope = this@AnimatedContent,
+                                            resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds()
 
 
                                         ), style = MaterialTheme.typography.headlineMedium.copy(
@@ -566,7 +707,7 @@ fun MealItemCard2(
             )
         )
     } else {
-        remember { mutableStateOf(1f) }
+        remember { mutableFloatStateOf(1f) }
     }
 
 
