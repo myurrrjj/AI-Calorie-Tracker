@@ -12,6 +12,9 @@ data class MealLog(
     val timeStamp: Long = System.currentTimeMillis(),
     val userRequest: String,
     val aiResponse: String,
+    val imagePath: String? = null,
+
+
 
     @Embedded
     val macros: MacroNutrients,
@@ -20,9 +23,7 @@ data class MealLog(
     val micros: MicroNutrients,
 
     @Ignore
-    val isAnalysing: Boolean = false
-
-
+    val isAnalysing: Boolean = false,
 ) {
     constructor(
         id: Int,
@@ -30,16 +31,16 @@ data class MealLog(
         userRequest: String,
         aiResponse: String,
         macros: MacroNutrients,
-        micros: MicroNutrients
+        micros: MicroNutrients,
+        imagePath: String?
     ) : this(
-        id = id,
-        timeStamp = timeStamp,
-        userRequest = userRequest,
-        aiResponse = aiResponse,
-        macros = macros,
-        micros = micros,
-        isAnalysing = false
-
+        id,
+        timeStamp,
+        userRequest,
+        aiResponse,
+        imagePath,
+        macros,
+        micros
     )
 }
 

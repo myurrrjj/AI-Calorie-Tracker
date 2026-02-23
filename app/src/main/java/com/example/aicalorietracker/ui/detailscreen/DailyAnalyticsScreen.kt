@@ -2,6 +2,7 @@ package com.example.aicalorietracker.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -51,7 +52,8 @@ import com.example.aicalorietracker.local.MealLog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DailyAnalyticsScreen(
+fun SharedTransitionScope.DailyAnalyticsScreen(
+
     state: MealUiState, onDismiss: () -> Unit
 ) {
     val totals = remember(state.meals) {
@@ -74,6 +76,13 @@ fun DailyAnalyticsScreen(
         ), exit = slideOutVertically(targetOffsetY = { it })
     ) {
         Scaffold(
+            modifier = Modifier
+//                .sharedBounds(
+//                rememberSharedContentState("detailscreen"),
+//                animatedVisibilityScope = this@AnimatedVisibility,
+//                resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds()
+//            )
+            ,
             containerColor = MaterialTheme.colorScheme.surface, topBar = {
                 CenterAlignedTopAppBar(
                     title = { Text("Daily Breakdown", fontWeight = FontWeight.Bold) },
@@ -152,16 +161,36 @@ fun DailyAnalyticsScreen(
                         DetailStatCard("Sugar", "${totals.sugar}g", "🍬", Modifier.weight(1f))
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        DetailStatCard("Vitamin A", "${totals.vitaminA} IU", "🥕", Modifier.weight(1f))
-                        DetailStatCard("Vitamin C", "${totals.vitaminC}mg", "🍊", Modifier.weight(1f))
+                        DetailStatCard(
+                            "Vitamin A",
+                            "${totals.vitaminA} IU",
+                            "🥕",
+                            Modifier.weight(1f)
+                        )
+                        DetailStatCard(
+                            "Vitamin C",
+                            "${totals.vitaminC}mg",
+                            "🍊",
+                            Modifier.weight(1f)
+                        )
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        DetailStatCard("Vitamin D", "${totals.vitaminD} IU", "☀️", Modifier.weight(1f))
+                        DetailStatCard(
+                            "Vitamin D",
+                            "${totals.vitaminD} IU",
+                            "☀️",
+                            Modifier.weight(1f)
+                        )
                         DetailStatCard("Calcium", "${totals.calcium}mg", "🥛", Modifier.weight(1f))
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         DetailStatCard("Iron", "${totals.iron}mg", "🦾", Modifier.weight(1f))
-                        DetailStatCard("Potassium", "${totals.potassium}mg", "🍌", Modifier.weight(1f))
+                        DetailStatCard(
+                            "Potassium",
+                            "${totals.potassium}mg",
+                            "🍌",
+                            Modifier.weight(1f)
+                        )
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         DetailStatCard("Sodium", "${totals.sodium}mg", "🧂", Modifier.weight(1f))

@@ -1,11 +1,12 @@
 package com.example.aicalorietracker.network
 
-import android.R.attr.prompt
+import android.graphics.BitmapFactory
 import com.example.aicalorietracker.BuildConfig
 import com.example.aicalorietracker.local.MacroNutrients
 import com.example.aicalorietracker.local.MealLog
 import com.example.aicalorietracker.local.MicroNutrients
 import com.google.ai.client.generativeai.GenerativeModel
+import com.google.ai.client.generativeai.type.content
 import com.google.ai.client.generativeai.type.generationConfig
 import org.json.JSONObject
 
@@ -25,7 +26,7 @@ class AiService {
 
         })
 
-    suspend fun analyseMeal(userText: String): Result<MealLog> {
+    suspend fun analyseMeal(localPath: String?, userText: String): Result<MealLog> {
         return try {
             val prompt = """
 Analyze this meal description: "$userText".
@@ -56,8 +57,19 @@ Estimate values when needed.
 If input is not food, return all zeros and a polite aiResponse.
 """.trimIndent()
 
+            val inputContent = content{
+                if (localPath != null){
+                    val bitmap = BitmapFactory.decodeFile(localPath)
+                    image(bitmap)
+                    text(prompt)
+                }
+                    else{
+                        text(prompt)
+                }
 
-            val response = model.generateContent(prompt)
+
+            }
+            val response = model.generateContent(inputContent)
             val jsonString = response.text ?: throw Exception("Empty response from AI")
             val resultMeal = parseJsonToMealLog(jsonString, userText)
             Result.success(resultMeal)
@@ -97,7 +109,7 @@ If input is not food, return all zeros and a polite aiResponse.
             userRequest = originalText,
             aiResponse = json.optString("aiResponse", "Logged."),
             macros = macros,
-            micros = micros
+            micros = micros,
         )
     }
 

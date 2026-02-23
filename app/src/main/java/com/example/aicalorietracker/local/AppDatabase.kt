@@ -5,10 +5,11 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [MealLog::class], version = 1, exportSchema = false)
+@Database(entities = [MealLog::class], version = 2, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun mealDao(): MealDao
+
 
     companion object {
         @Volatile
@@ -20,6 +21,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "calorie_tracker_database"
                 )
+                    .fallbackToDestructiveMigration()
                     .build()
                     .also { Instance = it }
             }

@@ -1,13 +1,18 @@
 package com.example.aicalorietracker.repository
 
-import android.R.attr.data
-import android.R.string.no
+
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
 import com.example.aicalorietracker.local.MealDao
 import com.example.aicalorietracker.local.MealLog
 import com.example.aicalorietracker.network.AiService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.FileOutputStream
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
@@ -15,7 +20,8 @@ import java.time.ZoneId
 interface MealRepository {
 
     fun getMealHistory(): Flow<List<MealLog>>
-    suspend fun addMealLog(userText: String,date: LocalDate): Result<MealLog>
+
+    suspend fun addMealLog(localPath: String?, userText: String, date: LocalDate): Result<MealLog>
     suspend fun deleteLog(mealLog: MealLog)
 
     fun getMealsForDay(startTime: Long, endTime: Long): Flow<List<MealLog>>
@@ -23,43 +29,87 @@ interface MealRepository {
 
 }
 
-class OfflineMealRepository(private val aiService: AiService, private val mealDao: MealDao) :
-    MealRepository {
+fun processAndSaveImage(context: Context, uriString: String): String? {
+    return try {
+        val uri = Uri.parse(uriString)
+        val inputStream = context.contentResolver.openInputStream(uri) ?: return null
+        val options = BitmapFactory.Options().apply {
+            inSampleSize = 2
+        }
+        val bitmap = BitmapFactory.decodeStream(inputStream, null, options)
+        inputStream.close()
+        if (bitmap == null) return null
+        val filename = "meal_${System.currentTimeMillis()}.jpg"
+        val file = File(context.filesDir, filename)
+        FileOutputStream(file).use { out ->
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 80, out)
+        }
+
+        bitmap.recycle()
+
+        file.absolutePath
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
+    }
+}
+
+class OfflineMealRepository(
+    private val aiService: AiService,
+    private val mealDao: MealDao,
+    private val context: Context
+) : MealRepository {
     override fun getMealHistory(): Flow<List<MealLog>> {
         return mealDao.getAllMeals()
     }
-    override suspend fun addMealLog(userText: String, date: LocalDate): Result<MealLog> {
-        return withContext(Dispatchers.IO) {
-            val result = aiService.analyseMeal(userText)
-            result.map { mealLog ->
-                val nowTime = LocalTime.now()
-                val correctTimeStamp = date.atTime(nowTime)
-                    .atZone(ZoneId.systemDefault())
-                    .toInstant()
-                    .toEpochMilli()
-                val adjustedMeal = mealLog.copy(timeStamp = correctTimeStamp)
 
-                mealDao.insertMeal(adjustedMeal)
-                adjustedMeal
+    override suspend fun addMealLog(
+        imageUri: String?, userText: String, date: LocalDate
+    ): Result<MealLog> {
+
+
+        return withContext(Dispatchers.IO) {
+            try{
+                val finalLocalPath = imageUri?.let { processAndSaveImage(context, it) }
+                val result = aiService.analyseMeal(finalLocalPath, userText)
+
+                result.map { mealLog ->
+                    val nowTime = LocalTime.now()
+                    val correctTimeStamp =
+                        date.atTime(nowTime).atZone(ZoneId.systemDefault()).toInstant()
+                            .toEpochMilli()
+                    val adjustedMeal =
+                        mealLog.copy(timeStamp = correctTimeStamp, imagePath = finalLocalPath)
+
+                    mealDao.insertMeal(adjustedMeal)
+                    adjustedMeal
+                }
+            }catch (e: Exception){
+                Result.failure(e)
+
             }
         }
     }
+
     override suspend fun deleteLog(mealLog: MealLog) {
-        withContext(Dispatchers.IO){
+        withContext(Dispatchers.IO) {
+            mealLog.imagePath?.let { path ->
+                val file = File(path)
+                if (file.exists()) file.delete()
+            }
             mealDao.deleteMeal(mealLog)
-        }    }
+        }
+    }
 
     override fun getMealsForDay(
-        startTime: Long,
-        endTime: Long
+        startTime: Long, endTime: Long
     ): Flow<List<MealLog>> {
         return mealDao.getMealsForDay(startTime, endTime)
 
     }
 
     override fun getCaloriesForDay(
-        startTime: Long,
-        endTime: Long
+        startTime: Long, endTime: Long
     ): Flow<Int?> {
         return mealDao.getTotalCaloriesForDay(startTime, endTime)
     }

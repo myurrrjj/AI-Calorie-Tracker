@@ -1,5 +1,6 @@
 package com.example.aicalorietracker.ui
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -11,9 +12,11 @@ import com.example.aicalorietracker.local.MealLog
 import com.example.aicalorietracker.local.MicroNutrients
 import com.example.aicalorietracker.repository.MealRepository
 import com.example.aicalorietracker.repository.UserPreferencesRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
@@ -41,7 +44,7 @@ class MealViewModel(
     private val preferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
 
-    private val dayFlowCache = mutableMapOf<LocalDate,Flow<MealUiState>>()
+    private val dayFlowCache = mutableMapOf<LocalDate, Flow<MealUiState>>()
 
 
     private val _errorMessage = MutableStateFlow<String?>(null)
@@ -52,42 +55,43 @@ class MealViewModel(
         get() = LocalDate.now()
 
     fun getDayFlow(date: LocalDate): Flow<MealUiState> {
-        return dayFlowCache.getOrPut(date){
-        val startOfDay = date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-        val endOfDay =
-            date.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        return dayFlowCache.getOrPut(date) {
+            val startOfDay = date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+            val endOfDay =
+                date.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
-         combine(
-            repository.getMealsForDay(startOfDay, endOfDay),
-            _targetCalories, _pendingMeals,
-            _errorMessage
-        ) { dbMeals,target, pendingMeals, error ->
+            combine(
+                repository.getMealsForDay(startOfDay, endOfDay),
+                _targetCalories, _pendingMeals,
+                _errorMessage
+            ) { dbMeals, target, pendingMeals, error ->
 
-            val relevantPending = pendingMeals.filter { isSameDay(date, it.timeStamp) }
+                val relevantPending = pendingMeals.filter { isSameDay(date, it.timeStamp) }
 
-            val allMeals = relevantPending + dbMeals
-            val currentTotalCalories = allMeals.sumOf { it.macros.calories }
+                val allMeals = relevantPending + dbMeals
+                val currentTotalCalories = allMeals.sumOf { it.macros.calories }
 
-            MealUiState(
-                meals = allMeals,
-                totalCalories = currentTotalCalories,
-                isLoading = relevantPending.isNotEmpty(),
-                errorMessage = error,
-                currentDate = date,
-                targetCalories = target
-            )
-        }}
+                MealUiState(
+                    meals = allMeals,
+                    totalCalories = currentTotalCalories,
+                    isLoading = relevantPending.isNotEmpty(),
+                    errorMessage = error,
+                    currentDate = date,
+                    targetCalories = target
+                )
+            }.flowOn(Dispatchers.Default)
+        }
     }
 
-    fun updateTargetCalories(newTarget:Int){
-        if (newTarget in 500..10000){
+    fun updateTargetCalories(newTarget: Int) {
+        if (newTarget in 500..10000) {
             preferencesRepository.updateTargetCalories(newTarget)
             _targetCalories.value = newTarget
         }
     }
 
-    fun analyseAndAddMeal(userText: String, date: LocalDate) {
-        if (userText.isBlank()) return
+    fun analyseAndAddMeal(imageUri: Uri?, userText: String, date: LocalDate) {
+        if (userText.isBlank() && imageUri == null) return
 
         val nowTime = LocalTime.now()
         val optimisticTimestamp = date.atTime(nowTime)
@@ -100,19 +104,20 @@ class MealViewModel(
         val optimisticMeal = MealLog(
             id = tempId,
             timeStamp = optimisticTimestamp,
-            userRequest = userText,
+            userRequest = userText.ifBlank { "Image Analysis" },
             aiResponse = "Analysing...",
             macros = MacroNutrients(),
             micros = MicroNutrients(),
-            isAnalysing = true
+            isAnalysing = true,
+            imagePath = imageUri?.toString()
         )
 
         _pendingMeals.value = listOf(optimisticMeal) + _pendingMeals.value
-
         viewModelScope.launch {
             _errorMessage.value = null
+            val uriString = imageUri?.toString()
 
-            val result = repository.addMealLog(userText, date)
+            val result = repository.addMealLog(uriString, userText, date)
 
             _pendingMeals.value = _pendingMeals.value.filter { it.id != tempId }
 
@@ -141,7 +146,10 @@ class MealViewModel(
             initializer {
                 val application =
                     (this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as CalorieTrackerApplication)
-                MealViewModel(repository = application.container.mealRepository, preferencesRepository = application.container.userPreferencesRepository)
+                MealViewModel(
+                    repository = application.container.mealRepository,
+                    preferencesRepository = application.container.userPreferencesRepository
+                )
             }
         }
     }
