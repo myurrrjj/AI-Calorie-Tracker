@@ -9,10 +9,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
-import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.SizeTransform
@@ -34,8 +32,6 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -48,7 +44,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -61,7 +56,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Camera
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
@@ -106,7 +100,6 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -123,7 +116,6 @@ import com.example.aicalorietracker.ui.DailyAnalyticsScreen
 import com.example.aicalorietracker.ui.MealUiState
 import com.example.aicalorietracker.ui.MealViewModel
 import com.example.aicalorietracker.ui.Utils.bouncyClick
-import com.example.aicalorietracker.ui.homescreen.MealDetailOverlay2
 import kotlinx.coroutines.launch
 import java.io.File
 import java.time.Instant
@@ -329,8 +321,8 @@ fun DayView2(
             .padding(horizontal = 16.dp)
     ) {
         Spacer(modifier = Modifier.height(16.dp))
-        with(sharedTransitionScope){
-            AnimatedVisibility(visible = true){
+        with(sharedTransitionScope) {
+            AnimatedVisibility(visible = true) {
                 CalorieProgressCard(
                     currentCalories = totalCalories,
                     targetCalories = targetCalories,
@@ -380,7 +372,7 @@ fun DayView2(
             with(sharedTransitionScope) {
 
                 LazyColumn(
-                    state =listState,
+                    state = listState,
                     contentPadding = PaddingValues(bottom = 120.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
@@ -415,7 +407,7 @@ fun DayView2(
                                             resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds()
                                         ),
                                     sharedTransitionScope = sharedTransitionScope,
-                                    animatedVisibilityScope =this@AnimatedVisibility,
+                                    animatedVisibilityScope = this@AnimatedVisibility,
                                 )
                             }
                         }
@@ -572,7 +564,9 @@ fun SharedTransitionScope.MealDetailOverlay2(
                                         style = MaterialTheme.typography.titleMedium.copy(
                                             fontWeight = FontWeight.Bold
                                         ),
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(
+                                            alpha = 0.7f
+                                        )
                                     )
                                 }
                             }
@@ -612,9 +606,10 @@ fun SharedTransitionScope.MealDetailOverlay2(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                Box(modifier = Modifier
-                                    .weight(1f)
-                                    .bouncyClick { }) {
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .bouncyClick { }) {
                                     MacroCard(
                                         "Protein",
                                         "${meal.macros.protein}g",
@@ -622,9 +617,10 @@ fun SharedTransitionScope.MealDetailOverlay2(
                                         MaterialTheme.colorScheme.primaryContainer
                                     )
                                 }
-                                Box(modifier = Modifier
-                                    .weight(1f)
-                                    .bouncyClick { }) {
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .bouncyClick { }) {
                                     MacroCard(
                                         "Carbs",
                                         "${meal.macros.carbs}g",
@@ -632,9 +628,10 @@ fun SharedTransitionScope.MealDetailOverlay2(
                                         MaterialTheme.colorScheme.secondaryContainer
                                     )
                                 }
-                                Box(modifier = Modifier
-                                    .weight(1f)
-                                    .bouncyClick { }) {
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .bouncyClick { }) {
                                     MacroCard(
                                         "Fat",
                                         "${meal.macros.fat}g",
@@ -650,9 +647,10 @@ fun SharedTransitionScope.MealDetailOverlay2(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                Box(modifier = Modifier
-                                    .weight(1f)
-                                    .bouncyClick { }) {
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .bouncyClick { }) {
                                     MacroCard(
                                         "Fiber",
                                         "${meal.macros.fiber}g",
@@ -660,9 +658,10 @@ fun SharedTransitionScope.MealDetailOverlay2(
                                         MaterialTheme.colorScheme.surfaceContainerHigh
                                     )
                                 }
-                                Box(modifier = Modifier
-                                    .weight(1f)
-                                    .bouncyClick { }) {
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .bouncyClick { }) {
                                     MacroCard(
                                         "Sugar",
                                         "${meal.macros.sugar}g",
@@ -725,13 +724,14 @@ fun MealItemCard2(
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
     sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope : AnimatedVisibilityScope
+    animatedVisibilityScope: AnimatedVisibilityScope
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "analyzingPulse")
     val animatedAlpha by if (meal.isAnalysing) {
         infiniteTransition.animateFloat(
             initialValue = 0.5f, targetValue = 1f, animationSpec = infiniteRepeatable(
-                animation = tween(1200, easing = LinearOutSlowInEasing), repeatMode = RepeatMode.Reverse
+                animation = tween(1200, easing = LinearOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse
             ), label = "alpha"
         )
     } else {
@@ -828,7 +828,7 @@ fun MealItemCard2(
                             shape = RoundedCornerShape(8.dp),
                             color = MaterialTheme.colorScheme.primaryContainer
                         ) {
-                            with(sharedTransitionScope){
+                            with(sharedTransitionScope) {
                                 Text(
                                     text = "${meal.macros.calories} kcal",
                                     style = MaterialTheme.typography.labelSmall.copy(
@@ -885,7 +885,6 @@ fun MealItemCard2(
         }
     }
 }
-
 
 
 @Composable
@@ -1032,19 +1031,20 @@ fun InputArea(
             }
         }
 
-        Row(
-            verticalAlignment = Alignment.Bottom,
-            horizontalArrangement = Arrangement.End,
-            modifier = Modifier.fillMaxWidth()
-        ) {
+//        Row(
+//            verticalAlignment = Alignment.Bottom,
+//            horizontalArrangement = Arrangement.End,
+//            modifier = Modifier.fillMaxWidth()
+//        ) {
             Surface(
                 shape = RoundedCornerShape(32.dp),
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(end = 12.dp),
+                modifier = Modifier,
+//                    .weight(1f),
+//                    .padding(horizontal = 12.dp),
                 shadowElevation = 6.dp,
-                tonalElevation = 4.dp
+                tonalElevation = 4.dp,
+
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -1086,7 +1086,7 @@ fun InputArea(
                                     )
                                 }
                             } else {
-                                Row {
+                                Row() {
                                     Box(
                                         modifier = Modifier
                                             .size(50.dp)
@@ -1139,8 +1139,12 @@ fun InputArea(
 
                     TextField(
                         singleLine = true,
+
                         value = text,
-                        onValueChange = { text = it },
+                        onValueChange = {
+                            mediaButtonExpanded = false
+                            text = it
+                        },
                         placeholder = {
                             Text(
                                 "e.g. a slice of pizza",
@@ -1168,7 +1172,8 @@ fun InputArea(
                     )
 
 
-                    Surface(shape =  CircleShape,
+                    Surface(
+                        shape = CircleShape,
                         modifier = Modifier
                             .size(50.dp)
 
@@ -1199,7 +1204,7 @@ fun InputArea(
             }
 
 
-        }
+//        }
     }
 }
 

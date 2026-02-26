@@ -15,7 +15,6 @@ data class MealLog(
     val imagePath: String? = null,
 
 
-
     @Embedded
     val macros: MacroNutrients,
 
@@ -43,6 +42,58 @@ data class MealLog(
         micros
     )
 }
+
+
+//@Entity(tableName = "fasting_logs")
+
+fun SavedMeal.toMealLog() = MealLog(
+    id = 0,
+    timeStamp = System.currentTimeMillis(),
+    userRequest = this.userRequest,
+    aiResponse = this.aiResponse,
+    macros = this.macros,
+    micros = this.micros,
+    imagePath = this.imagePath
+)
+@Entity(tableName = "savedMeals")
+data class SavedMeal(
+    @PrimaryKey(autoGenerate = true)
+    val id: Int = 0,
+    val userRequest: String,
+    val aiResponse: String,
+    val imagePath: String? = null,
+    val frequency : Int = 0,
+
+    @Embedded
+    val macros: MacroNutrients,
+
+    @Embedded
+    val micros: MicroNutrients,
+
+    @Ignore
+    val isAnalysing: Boolean = false,
+) {
+    constructor(
+        id: Int,
+        timeStamp: Long,
+        userRequest: String,
+        aiResponse: String,
+        macros: MacroNutrients,
+        micros: MicroNutrients,
+        imagePath: String?,
+        frequency: Int=0
+    ) : this(
+        id,
+        userRequest,
+        aiResponse,
+        imagePath,
+        frequency,
+        macros,
+        micros
+    )
+}
+
+
 
 data class MacroNutrients(
     val calories: Int = 0,

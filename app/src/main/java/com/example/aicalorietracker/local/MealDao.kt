@@ -25,3 +25,16 @@ interface MealDao {
 
 
 }
+
+@Dao
+interface SavedMealDao{
+    @Insert
+    suspend fun saveMeal(savedMeal : SavedMeal)
+
+    @Delete
+    suspend fun deleteSavedMeal(savedMeal: SavedMeal)
+
+    @Query("SELECT * FROM savedMeals ORDER BY frequency DESC")
+    fun getAllMeals() : Flow<List<MealLog>>
+
+}

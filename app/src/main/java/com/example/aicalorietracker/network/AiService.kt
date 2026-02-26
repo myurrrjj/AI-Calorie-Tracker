@@ -1,33 +1,42 @@
 package com.example.aicalorietracker.network
 
 import android.graphics.BitmapFactory
+import android.graphics.Bitmap
 import com.example.aicalorietracker.BuildConfig
 import com.example.aicalorietracker.local.MacroNutrients
 import com.example.aicalorietracker.local.MealLog
 import com.example.aicalorietracker.local.MicroNutrients
-import com.google.ai.client.generativeai.GenerativeModel
-import com.google.ai.client.generativeai.type.content
-import com.google.ai.client.generativeai.type.generationConfig
 import org.json.JSONObject
+import com.google.genai.Client
+import com.google.genai.types.GenerateContentConfig
+import com.google.genai.types.Tool
+import com.google.genai.types.GoogleSearch
+import com.google.genai.types.Content
+import com.google.genai.types.Part
+import com.google.genai.types.Blob
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
 
 class AiService {
 
-    private val model = GenerativeModel(
+    private val client = Client.builder()
+        .apiKey(BuildConfig.GEMINI_API_KEY)
+        .build()
 
-        modelName = "gemini-2.5-flash",
-        apiKey = BuildConfig.GEMINI_API_KEY,
-        generationConfig = generationConfig {
+    private val searchTool = Tool.builder()
+        .googleSearch(GoogleSearch.builder().build())
+        .build()
 
-            temperature = 0.2f
-            topK = 32
-            topP = 0.95f
-            responseMimeType = "application/json"
+    private val config = GenerateContentConfig.builder()
+        .temperature(0.2f)
+        .topK(32f)
+        .topP(0.95f)
+        .tools(listOf(searchTool))
+        .build()
 
-
-        })
-
-    suspend fun analyseMeal(localPath: String?, userText: String): Result<MealLog> {
-        return try {
+    suspend fun analyseMeal(localPath: String?, userText: String): Result<MealLog> = withContext(Dispatchers.IO) {
+        return@withContext try {
             val prompt = """
 Analyze this meal description: "$userText".
 
@@ -57,36 +66,48 @@ Estimate values when needed.
 If input is not food, return all zeros and a polite aiResponse.
 """.trimIndent()
 
-            val inputContent = content{
-                if (localPath != null){
-                    val bitmap = BitmapFactory.decodeFile(localPath)
-                    image(bitmap)
-                    text(prompt)
-                }
-                    else{
-                        text(prompt)
-                }
+            val contentBuilder = Content.builder().role("user")
 
+            if (localPath != null) {
+                val bitmap = BitmapFactory.decodeFile(localPath)
+                val stream = ByteArrayOutputStream()
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 80, stream)
+                val byteArray = stream.toByteArray()
 
+                contentBuilder.parts(listOf(
+                    Part.builder().inlineData(Blob.builder().data(byteArray).mimeType("image/jpeg").build()).build(),
+                    Part.builder().text(prompt).build()
+                ))
+            } else {
+                contentBuilder.parts(listOf(Part.builder().text(prompt).build()))
             }
-            val response = model.generateContent(inputContent)
-            val jsonString = response.text ?: throw Exception("Empty response from AI")
-            val resultMeal = parseJsonToMealLog(jsonString, userText)
+
+            val response = client.models.generateContent(
+                "gemini-2.5-flash",
+                contentBuilder.build(),
+                config
+            )
+
+            val rawString = response.text() ?: throw Exception("Empty response from AI")
+
+            val cleanedJsonString = rawString
+                .replace("```json", "")
+                .replace("```", "")
+                .trim()
+
+            val resultMeal = parseJsonToMealLog(cleanedJsonString, userText)
             Result.success(resultMeal)
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-
     private fun parseJsonToMealLog(jsonString: String, originalText: String): MealLog {
         val json = JSONObject(jsonString)
 
         val macrosJson = json.optJSONObject("macros")
         val macros = MacroNutrients(
-            calories = json.optInt(
-                "calories", 0
-            ),
+            calories = json.optInt("calories", 0),
             protein = macrosJson?.optInt("protein") ?: 0,
             carbs = macrosJson?.optInt("carbs") ?: 0,
             fat = macrosJson?.optInt("fat") ?: 0,
@@ -112,5 +133,4 @@ If input is not food, return all zeros and a polite aiResponse.
             micros = micros,
         )
     }
-
 }
