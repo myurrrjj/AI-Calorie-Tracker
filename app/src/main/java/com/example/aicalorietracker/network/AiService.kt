@@ -40,9 +40,14 @@ class AiService {
             val prompt = """
 Analyze this meal description: "$userText".
 
-Return ONLY valid JSON in this exact format:
+RULES:
+1. For generic foods, homemade meals, and produce, estimate nutrition from internal memory. DO NOT search the web.
+2. ONLY use Google Search if the input contains a specific branded/packaged product to find its exact nutritional label.
+3. If the input is not food, return all zeros and a polite aiResponse.
+
+Return ONLY raw, valid JSON in this exact format (no markdown blocks or backticks):
 {
-  "aiResponse": "",
+  "aiResponse": "Brief summary",
   "calories": 0,
   "macros": {
     "protein": 0,
@@ -61,9 +66,6 @@ Return ONLY valid JSON in this exact format:
     "potassium": 0.0
   }
 }
-
-Estimate values when needed.
-If input is not food, return all zeros and a polite aiResponse.
 """.trimIndent()
 
             val contentBuilder = Content.builder().role("user")
