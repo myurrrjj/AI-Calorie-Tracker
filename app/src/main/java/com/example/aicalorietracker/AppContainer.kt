@@ -23,7 +23,9 @@ class DefaultAppContainer(private val context : Context): AppContainer{
     override val mealRepository: MealRepository by lazy {
         OfflineMealRepository(
             aiService = aiService, mealDao = database.mealDao(),
-            context = context
+            context = context,
+            savedMealDao = database.savedMealDao(),
+            userPreferencesRepository =userPreferencesRepository
         )
     }
 }

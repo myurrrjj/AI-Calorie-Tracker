@@ -10,13 +10,17 @@ import com.example.aicalorietracker.CalorieTrackerApplication
 import com.example.aicalorietracker.local.MacroNutrients
 import com.example.aicalorietracker.local.MealLog
 import com.example.aicalorietracker.local.MicroNutrients
+import com.example.aicalorietracker.local.SavedMeal
 import com.example.aicalorietracker.repository.MealRepository
 import com.example.aicalorietracker.repository.UserPreferencesRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
@@ -50,6 +54,14 @@ class MealViewModel(
     private val _errorMessage = MutableStateFlow<String?>(null)
     private val _pendingMeals = MutableStateFlow<List<MealLog>>(emptyList())
     private val _targetCalories = MutableStateFlow(preferencesRepository.getTargetCalories())
+
+    val savedMeals: StateFlow<List<SavedMeal>> = repository.getSavedMeals()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000),emptyList())
+    fun getApiKey(): String? = preferencesRepository.getApiKey()
+
+    fun saveApiKey(key: String) {
+        preferencesRepository.saveApiKey(key)
+    }
 
     val today: LocalDate
         get() = LocalDate.now()
@@ -108,9 +120,8 @@ class MealViewModel(
             aiResponse = "Analysing...",
             macros = MacroNutrients(),
             micros = MicroNutrients(),
-            isAnalysing = true,
             imagePath = imageUri?.toString()
-        )
+        ).apply { isAnalysing = true }
 
         _pendingMeals.value = listOf(optimisticMeal) + _pendingMeals.value
         viewModelScope.launch {
@@ -141,6 +152,27 @@ class MealViewModel(
         _errorMessage.value = null
     }
 
+    fun quickLogSavedMeal(savedMeal: SavedMeal,date: LocalDate){
+        viewModelScope.launch {
+            _errorMessage.value = null
+            val result = repository.quickLogSavedMeal(savedMeal,date)
+            result.onFailure { exception->
+                _errorMessage.value = exception.localizedMessage ?: "Error Logging Saved Meal"
+            }
+        }
+    }
+
+    fun saveMealToFavorites(mealLog: MealLog) {
+        viewModelScope.launch {
+            repository.saveMealToFavourites(mealLog)
+        }
+    }
+
+    fun deleteSavedMeal(savedMeal: SavedMeal) {
+        viewModelScope.launch {
+            repository.deleteSavedMeal(savedMeal)
+        }
+    }
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {

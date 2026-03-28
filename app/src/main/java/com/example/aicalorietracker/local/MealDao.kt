@@ -3,6 +3,7 @@ package com.example.aicalorietracker.local
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
 
@@ -28,13 +29,14 @@ interface MealDao {
 
 @Dao
 interface SavedMealDao{
-    @Insert
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun saveMeal(savedMeal : SavedMeal)
 
     @Delete
     suspend fun deleteSavedMeal(savedMeal: SavedMeal)
 
     @Query("SELECT * FROM savedMeals ORDER BY frequency DESC")
-    fun getAllMeals() : Flow<List<MealLog>>
+    fun getAllSavedMeals() : Flow<List<SavedMeal>>
 
 }

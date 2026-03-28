@@ -1,5 +1,6 @@
 package com.example.aicalorietracker.network
 
+import android.R.attr.apiKey
 import android.graphics.BitmapFactory
 import android.graphics.Bitmap
 import com.example.aicalorietracker.BuildConfig
@@ -20,9 +21,6 @@ import java.io.ByteArrayOutputStream
 
 class AiService {
 
-    private val client = Client.builder()
-        .apiKey(BuildConfig.GEMINI_API_KEY)
-        .build()
 
     private val searchTool = Tool.builder()
         .googleSearch(GoogleSearch.builder().build())
@@ -35,8 +33,13 @@ class AiService {
         .tools(listOf(searchTool))
         .build()
 
-    suspend fun analyseMeal(localPath: String?, userText: String): Result<MealLog> = withContext(Dispatchers.IO) {
+    suspend fun analyseMeal(apiKey:String,localPath: String?, userText: String): Result<MealLog> = withContext(Dispatchers.IO) {
         return@withContext try {
+             val client = Client.builder()
+                .apiKey(apiKey)
+                .build()
+
+
             val prompt = """
 Analyze this meal description: "$userText".
 

@@ -14,37 +14,15 @@ data class MealLog(
     val aiResponse: String,
     val imagePath: String? = null,
 
-
     @Embedded
     val macros: MacroNutrients,
 
     @Embedded
-    val micros: MicroNutrients,
-
-    @Ignore
-    val isAnalysing: Boolean = false,
+    val micros: MicroNutrients
 ) {
-    constructor(
-        id: Int,
-        timeStamp: Long,
-        userRequest: String,
-        aiResponse: String,
-        macros: MacroNutrients,
-        micros: MicroNutrients,
-        imagePath: String?
-    ) : this(
-        id,
-        timeStamp,
-        userRequest,
-        aiResponse,
-        imagePath,
-        macros,
-        micros
-    )
+    @Ignore
+    var isAnalysing: Boolean = false
 }
-
-
-//@Entity(tableName = "fasting_logs")
 
 fun SavedMeal.toMealLog() = MealLog(
     id = 0,
@@ -55,6 +33,7 @@ fun SavedMeal.toMealLog() = MealLog(
     micros = this.micros,
     imagePath = this.imagePath
 )
+
 @Entity(tableName = "savedMeals")
 data class SavedMeal(
     @PrimaryKey(autoGenerate = true)
@@ -68,32 +47,11 @@ data class SavedMeal(
     val macros: MacroNutrients,
 
     @Embedded
-    val micros: MicroNutrients,
-
-    @Ignore
-    val isAnalysing: Boolean = false,
+    val micros: MicroNutrients
 ) {
-    constructor(
-        id: Int,
-        timeStamp: Long,
-        userRequest: String,
-        aiResponse: String,
-        macros: MacroNutrients,
-        micros: MicroNutrients,
-        imagePath: String?,
-        frequency: Int=0
-    ) : this(
-        id,
-        userRequest,
-        aiResponse,
-        imagePath,
-        frequency,
-        macros,
-        micros
-    )
+    @Ignore
+    var isAnalysing: Boolean = false
 }
-
-
 
 data class MacroNutrients(
     val calories: Int = 0,

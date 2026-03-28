@@ -2,6 +2,8 @@ package com.example.aicalorietracker.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.Spring
@@ -53,7 +55,7 @@ import com.example.aicalorietracker.local.MealLog
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SharedTransitionScope.DailyAnalyticsScreen(
-
+    animatedVisibilityScope: AnimatedVisibilityScope,
     state: MealUiState, onDismiss: () -> Unit
 ) {
     val totals = remember(state.meals) {
@@ -62,33 +64,31 @@ fun SharedTransitionScope.DailyAnalyticsScreen(
         }
     }
 
-    val visibleState = remember { MutableTransitionState(false).apply { targetState = true } }
-
+//    val visibleState = remember { MutableTransitionState(false).apply { targetState = true } }
+//
     BackHandler {
-        visibleState.targetState = false
+//        visibleState.targetState = false
         onDismiss()
     }
 
-    AnimatedVisibility(
-        visibleState = visibleState, enter = slideInVertically(
-            initialOffsetY = { it },
-            animationSpec = spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessLow)
-        ), exit = slideOutVertically(targetOffsetY = { it })
-    ) {
+//    AnimatedVisibility(
+//        visibleState = visibleState, enter = EnterTransition.None
+//
+//    ) {
         Scaffold(
             modifier = Modifier
-//                .sharedBounds(
-//                rememberSharedContentState("detailscreen"),
-//                animatedVisibilityScope = this@AnimatedVisibility,
-//                resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds()
-//            )
+                .sharedBounds(
+                rememberSharedContentState("detailscreen"),
+                animatedVisibilityScope = animatedVisibilityScope,
+                resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds()
+            )
             ,
             containerColor = MaterialTheme.colorScheme.surface, topBar = {
                 CenterAlignedTopAppBar(
                     title = { Text("Daily Breakdown", fontWeight = FontWeight.Bold) },
                     navigationIcon = {
                         IconButton(onClick = {
-                            visibleState.targetState = false
+//                            visibleState.targetState = false
                             onDismiss()
                         }) {
                             Icon(Icons.Default.Close, contentDescription = "Close")
@@ -201,7 +201,7 @@ fun SharedTransitionScope.DailyAnalyticsScreen(
                 Spacer(Modifier.height(48.dp))
             }
         }
-    }
+//    }
 }
 
 @Composable

@@ -9,6 +9,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.aicalorietracker.Navigation.CalorieTrackerApp
 import com.example.aicalorietracker.ui.homescreen.DashboardScreen2
 import com.example.aicalorietracker.ui.MealViewModel
 import com.example.aicalorietracker.ui.theme.AICalorieTrackerTheme
@@ -18,16 +19,15 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         enableEdgeToEdge()
-
+        val appContainer = (application as CalorieTrackerApplication).container
         setContent {
             AICalorieTrackerTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    val viewModel: MealViewModel = viewModel(factory = MealViewModel.Factory)
 
-                    DashboardScreen2(viewModel = viewModel)
+                    CalorieTrackerApp(appContainer = appContainer)
                 }
             }
         }

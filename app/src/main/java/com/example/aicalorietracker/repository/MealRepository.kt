@@ -7,6 +7,8 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import com.example.aicalorietracker.local.MealDao
 import com.example.aicalorietracker.local.MealLog
+import com.example.aicalorietracker.local.SavedMeal
+import com.example.aicalorietracker.local.SavedMealDao
 import com.example.aicalorietracker.network.AiService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -26,6 +28,12 @@ interface MealRepository {
 
     fun getMealsForDay(startTime: Long, endTime: Long): Flow<List<MealLog>>
     fun getCaloriesForDay(startTime: Long, endTime: Long): Flow<Int?>
+
+    fun getSavedMeals(): Flow<List<SavedMeal>>
+    suspend fun saveMealToFavourites(mealLog: MealLog)
+    suspend fun deleteSavedMeal(savedMeal: SavedMeal)
+    suspend fun quickLogSavedMeal(savedMeal: SavedMeal, date: LocalDate): Result<MealLog>
+
 
 }
 
@@ -57,7 +65,9 @@ fun processAndSaveImage(context: Context, uriString: String): String? {
 class OfflineMealRepository(
     private val aiService: AiService,
     private val mealDao: MealDao,
-    private val context: Context
+    private val context: Context,
+    private val userPreferencesRepository: UserPreferencesRepository,
+    private val savedMealDao: SavedMealDao
 ) : MealRepository {
     override fun getMealHistory(): Flow<List<MealLog>> {
         return mealDao.getAllMeals()
@@ -69,9 +79,13 @@ class OfflineMealRepository(
 
 
         return withContext(Dispatchers.IO) {
-            try{
+            try {
+                val apiKey = userPreferencesRepository.getApiKey()
+                    ?: throw Exception("API Key is missing. Please set it in Settings.")
+
+
                 val finalLocalPath = imageUri?.let { processAndSaveImage(context, it) }
-                val result = aiService.analyseMeal(finalLocalPath, userText)
+                val result = aiService.analyseMeal(apiKey, finalLocalPath, userText)
 
                 result.map { mealLog ->
                     val nowTime = LocalTime.now()
@@ -84,7 +98,7 @@ class OfflineMealRepository(
                     mealDao.insertMeal(adjustedMeal)
                     adjustedMeal
                 }
-            }catch (e: Exception){
+            } catch (e: Exception) {
                 Result.failure(e)
 
             }
@@ -112,6 +126,58 @@ class OfflineMealRepository(
         startTime: Long, endTime: Long
     ): Flow<Int?> {
         return mealDao.getTotalCaloriesForDay(startTime, endTime)
+    }
+
+    override fun getSavedMeals(): Flow<List<SavedMeal>> {
+        return savedMealDao.getAllSavedMeals()
+    }
+
+    override suspend fun saveMealToFavourites(mealLog: MealLog) {
+        withContext(Dispatchers.IO) {
+            val savedMeal = SavedMeal(
+                userRequest = mealLog.userRequest,
+                aiResponse = mealLog.aiResponse,
+                imagePath = mealLog.imagePath,
+                macros = mealLog.macros,
+                micros = mealLog.micros,
+                frequency = 0
+            )
+            savedMealDao.saveMeal(savedMeal)
+        }
+    }
+
+    override suspend fun deleteSavedMeal(savedMeal: SavedMeal) {
+        withContext(Dispatchers.IO) {
+            savedMealDao.deleteSavedMeal(savedMeal)
+        }
+    }
+
+    override suspend fun quickLogSavedMeal(
+        savedMeal: SavedMeal,
+        date: LocalDate
+    ): Result<MealLog> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val nowTime = LocalTime.now()
+                val correctTimeStamp =
+                    date.atTime(nowTime).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+
+                val newMealLog = MealLog(
+                    timeStamp = correctTimeStamp,
+                    userRequest = savedMeal.userRequest,
+                    aiResponse = savedMeal.aiResponse,
+                    imagePath = savedMeal.imagePath,
+                    macros = savedMeal.macros,
+                    micros = savedMeal.micros
+                )
+
+                mealDao.insertMeal(newMealLog)
+                savedMealDao.saveMeal(savedMeal.copy(frequency = savedMeal.frequency + 1))
+                Result.success(newMealLog)
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
     }
 
 }
