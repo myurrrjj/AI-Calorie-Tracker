@@ -149,8 +149,7 @@ private val HEADER_DATE_FORMATTER = DateTimeFormatter.ofPattern("EEEE, MMM d")
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun DashboardScreen2(
-    viewModel: MealViewModel,
-    onNavigateToApiGuide: () -> Unit
+    viewModel: MealViewModel, onNavigateToApiGuide: () -> Unit
 ) {
     var showDailyAnalytics by remember { mutableStateOf(false) }
     var showApiDialog by remember { mutableStateOf(false) }
@@ -185,8 +184,7 @@ fun DashboardScreen2(
     LaunchedEffect(currentUiState.errorMessage) {
         currentUiState.errorMessage?.let { error ->
             snackbarHostState.showSnackbar(
-                message = error,
-                withDismissAction = true
+                message = error, withDismissAction = true
             )
             viewModel.errorShown()
         }
@@ -230,8 +228,7 @@ fun DashboardScreen2(
             onHelpClick = {
                 showApiDialog = false
                 onNavigateToApiGuide()
-            }
-        )
+            })
     }
     if (showSavedMealsSheet) {
         SavedMealsBottomSheet(
@@ -305,8 +302,7 @@ fun DashboardScreen2(
                             }
                         }
                     }
-                }
-            ) { paddingValues ->
+                }) { paddingValues ->
 
                 Box(
                     modifier = Modifier
@@ -358,8 +354,7 @@ fun DashboardScreen2(
                 onSaveToFavourites = { mealToSave ->
                     viewModel.saveMealToFavorites(mealToSave)
                     activeMeal = null
-                }
-            )
+                })
 
             AnimatedVisibility(
                 visible = showDailyAnalytics,
@@ -367,10 +362,7 @@ fun DashboardScreen2(
                 exit = ExitTransition.None
             ) {
                 DailyAnalyticsScreen(
-                    this,
-                    state = currentUiState,
-                    onDismiss = { showDailyAnalytics = false }
-                )
+                    this, state = currentUiState, onDismiss = { showDailyAnalytics = false })
             }
         }
     }
@@ -479,8 +471,7 @@ fun SavedMealsBottomSheet(
                                                 ),
                                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                                                 modifier = Modifier.padding(
-                                                    horizontal = 6.dp,
-                                                    vertical = 2.dp
+                                                    horizontal = 6.dp, vertical = 2.dp
                                                 )
                                             )
                                         }
@@ -529,10 +520,7 @@ fun SavedMealsBottomSheet(
 
 @Composable
 fun ApiKeyQuickDialog(
-    initialKey: String,
-    onDismiss: () -> Unit,
-    onSave: (String) -> Unit,
-    onHelpClick: () -> Unit
+    initialKey: String, onDismiss: () -> Unit, onSave: (String) -> Unit, onHelpClick: () -> Unit
 ) {
     var keyInput by remember { mutableStateOf(initialKey) }
     val isKeyValid = keyInput.startsWith("AIza") && keyInput.length > 30
@@ -602,8 +590,7 @@ fun ApiKeyQuickDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     TextButton(
-                        onClick = onHelpClick,
-                        colors = ButtonDefaults.textButtonColors(
+                        onClick = onHelpClick, colors = ButtonDefaults.textButtonColors(
                             contentColor = MaterialTheme.colorScheme.primary
                         )
                     ) {
@@ -663,8 +650,7 @@ fun DayView2(
                     onEditClick = onEditGoal,
                     activeMealId = activeMealId,
                     onClick = onCardClick,
-                    modifier = Modifier
-                        .sharedBounds(
+                    modifier = Modifier.sharedBounds(
                             rememberSharedContentState("detailscreen"),
                             resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds(),
                             animatedVisibilityScope = this@AnimatedVisibility
@@ -767,11 +753,9 @@ fun SharedTransitionScope.MealDetailOverlay2(
         modifier = modifier,
         targetState = meal,
         label = "MealDetailOverlay",
-        transitionSpec = { fadeIn() togetherWith fadeOut() }
-    ) { meal ->
+        transitionSpec = { fadeIn() togetherWith fadeOut() }) { meal ->
         Box(
-            Modifier.fillMaxSize(),
-            contentAlignment = Alignment.TopCenter
+            Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter
         ) {
             if (meal != null) {
 
@@ -786,12 +770,10 @@ fun SharedTransitionScope.MealDetailOverlay2(
                     label = "alpha"
                 )
                 val contentOffset by animateDpAsState(
-                    targetValue = if (isLoaded) 0.dp else 40.dp,
-                    animationSpec = spring(
+                    targetValue = if (isLoaded) 0.dp else 40.dp, animationSpec = spring(
                         dampingRatio = Spring.DampingRatioMediumBouncy,
                         stiffness = Spring.StiffnessLow
-                    ),
-                    label = "offset"
+                    ), label = "offset"
                 )
 
                 Surface(
@@ -834,8 +816,7 @@ fun SharedTransitionScope.MealDetailOverlay2(
                                         resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds()
                                     ),
                                 style = MaterialTheme.typography.displaySmall.copy(
-                                    fontWeight = FontWeight.ExtraBold,
-                                    letterSpacing = (-1).sp
+                                    fontWeight = FontWeight.ExtraBold, letterSpacing = (-1).sp
                                 ),
                                 color = MaterialTheme.colorScheme.onBackground
                             )
@@ -845,12 +826,10 @@ fun SharedTransitionScope.MealDetailOverlay2(
                                     onClick = { onSaveToFavourites(meal) },
                                     modifier = Modifier
                                         .background(
-                                            MaterialTheme.colorScheme.primaryContainer,
-                                            CircleShape
+                                            MaterialTheme.colorScheme.primaryContainer, CircleShape
                                         )
                                         .size(40.dp)
-                                        .bouncyClick { onSaveToFavourites(meal) }
-                                ) {
+                                        .bouncyClick { onSaveToFavourites(meal) }) {
                                     Icon(
                                         Icons.Rounded.BookmarkAdd,
                                         contentDescription = "Save Meal",
@@ -859,15 +838,12 @@ fun SharedTransitionScope.MealDetailOverlay2(
                                     )
                                 }
                                 IconButton(
-                                    onClick = { onDismiss() },
-                                    modifier = Modifier
+                                    onClick = { onDismiss() }, modifier = Modifier
                                         .background(
-                                            MaterialTheme.colorScheme.surfaceVariant,
-                                            CircleShape
+                                            MaterialTheme.colorScheme.surfaceVariant, CircleShape
                                         )
                                         .size(40.dp)
-                                        .bouncyClick { onDismiss() }
-                                ) {
+                                        .bouncyClick { onDismiss() }) {
                                     Icon(
                                         Icons.Default.Close,
                                         contentDescription = "Close",
@@ -885,8 +861,7 @@ fun SharedTransitionScope.MealDetailOverlay2(
                             modifier = Modifier.graphicsLayer {
                                 alpha = contentAlpha
                                 translationY = contentOffset.toPx()
-                            }
-                        ) {
+                            }) {
 
                             Surface(
                                 modifier = Modifier
@@ -903,8 +878,7 @@ fun SharedTransitionScope.MealDetailOverlay2(
                                     Text(
                                         text = "${meal.macros.calories}",
                                         style = MaterialTheme.typography.displayLarge.copy(
-                                            fontWeight = FontWeight.Black,
-                                            letterSpacing = (-2).sp
+                                            fontWeight = FontWeight.Black, letterSpacing = (-2).sp
                                         ),
                                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                                         modifier = Modifier.sharedBounds(
@@ -1109,8 +1083,7 @@ fun MealItemCard2(
         shadowElevation = if (meal.isAnalysing) 0.dp else 2.dp
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically
         ) {
             Surface(
                 modifier = Modifier.size(56.dp),
@@ -1119,8 +1092,7 @@ fun MealItemCard2(
                 else MaterialTheme.colorScheme.secondaryContainer
             ) {
                 Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier.fillMaxSize()
+                    contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()
                 ) {
                     if (meal.imagePath != null) {
                         AsyncImage(
@@ -1157,8 +1129,7 @@ fun MealItemCard2(
                 Text(
                     text = meal.userRequest,
                     style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.sp
+                        fontWeight = FontWeight.Bold, letterSpacing = 0.sp
                     ),
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
@@ -1221,11 +1192,9 @@ fun MealItemCard2(
             if (!meal.isAnalysing) {
                 Spacer(Modifier.width(8.dp))
                 IconButton(
-                    onClick = onDelete,
-                    modifier = Modifier
+                    onClick = onDelete, modifier = Modifier
                         .background(
-                            MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
-                            CircleShape
+                            MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f), CircleShape
                         )
                         .size(36.dp)
                 ) {
@@ -1306,9 +1275,7 @@ fun createTempImageUri(context: Context): Uri {
     }
 
     return FileProvider.getUriForFile(
-        context,
-        "${context.packageName}.provider",
-        tempFile
+        context, "${context.packageName}.provider", tempFile
     )
 }
 
@@ -1349,24 +1316,18 @@ fun InputArea(
     }
 
     val attachIconRotation by animateFloatAsState(
-        targetValue = if (attachMenuOpen) 45f else 0f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMedium
-        ),
-        label = "AttachRotation"
+        targetValue = if (attachMenuOpen) 45f else 0f, animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium
+        ), label = "AttachRotation"
     )
 
     val addButtonColor by animateColorAsState(
         targetValue = if (attachMenuOpen) MaterialTheme.colorScheme.primary.copy(alpha = 0.75f)
-        else MaterialTheme.colorScheme.primary,
-        animationSpec = tween(200),
-        label = "AddColor"
+        else MaterialTheme.colorScheme.primary, animationSpec = tween(200), label = "AddColor"
     )
 
     Column(
-        modifier = modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.End
+        modifier = modifier.fillMaxWidth(), horizontalAlignment = Alignment.End
     ) {
 
         AnimatedVisibility(
@@ -1391,8 +1352,7 @@ fun InputArea(
                             .size(24.dp)
                             .align(Alignment.TopEnd)
                             .offset(x = 6.dp, y = (-6).dp)
-                            .bouncyClick { selectedImageUri = null }
-                    ) {
+                            .bouncyClick { selectedImageUri = null }) {
                         Icon(
                             imageVector = Icons.Rounded.Close,
                             contentDescription = "Remove",
@@ -1423,8 +1383,7 @@ fun InputArea(
                 onClick = {
                     attachMenuOpen = false
                     onOpenSavedMeals()
-                }
-            )
+                })
             AttachOptionChip(
                 label = "Gallery",
                 icon = Icons.Rounded.Image,
@@ -1439,8 +1398,7 @@ fun InputArea(
                     photoPickerLauncher.launch(
                         PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                     )
-                }
-            )
+                })
             AttachOptionChip(
                 label = "Camera",
                 icon = Icons.Rounded.CameraAlt,
@@ -1462,8 +1420,7 @@ fun InputArea(
                     } else {
                         cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
                     }
-                }
-            )
+                })
         }
 
         Surface(
@@ -1486,8 +1443,7 @@ fun InputArea(
                         .clip(CircleShape)
                         .bouncyClick(scaleDown = 0.88f) {
                             attachMenuOpen = !attachMenuOpen
-                        }
-                ) {
+                        }) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = Icons.Rounded.Add,
@@ -1526,30 +1482,25 @@ fun InputArea(
                                     style = MaterialTheme.typography.bodyLarge.copy(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
                                             alpha = 0.45f
-                                        ),
-                                        fontSize = 17.sp
+                                        ), fontSize = 17.sp
                                     )
                                 )
                             }
                             innerTextField()
                         }
-                    }
-                )
+                    })
 
                 Spacer(modifier = Modifier.width(8.dp))
 
                 SendButton(
-                    isLoading = isLoading,
-                    isActive = isReadyToSend,
-                    onClick = {
+                    isLoading = isLoading, isActive = isReadyToSend, onClick = {
                         val currentText = text
                         val currentUri = selectedImageUri
                         text = ""
                         selectedImageUri = null
                         attachMenuOpen = false
                         onSubmit(currentUri, currentText, targetDate)
-                    }
-                )
+                    })
             }
         }
     }
@@ -1568,26 +1519,24 @@ private fun AttachOptionChip(
     onClick: () -> Unit
 ) {
     val enterTransition = remember {
-        fadeIn(animationSpec = tween(durationMillis = 200, delayMillis = delayMillis)) +
-                slideInVertically(
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                        stiffness = Spring.StiffnessMedium
-                    ),
-                    initialOffsetY = { it / 2 }
-                ) +
-                scaleIn(
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                        stiffness = Spring.StiffnessMedium
-                    ),
-                    initialScale = 0.7f
-                )
+        fadeIn(
+            animationSpec = tween(
+                durationMillis = 200,
+                delayMillis = delayMillis
+            )
+        ) + slideInVertically(
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium
+            ), initialOffsetY = { it / 2 }) + scaleIn(
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium
+            ), initialScale = 0.7f
+        )
     }
     val exitTransition = remember {
-        fadeOut(animationSpec = tween(150)) +
-                slideOutVertically(animationSpec = tween(150), targetOffsetY = { it / 2 }) +
-                scaleOut(animationSpec = tween(150), targetScale = 0.7f)
+        fadeOut(animationSpec = tween(150)) + slideOutVertically(
+            animationSpec = tween(150),
+            targetOffsetY = { it / 2 }) + scaleOut(animationSpec = tween(150), targetScale = 0.7f)
     }
 
     AnimatedVisibility(visible = visible, enter = enterTransition, exit = exitTransition) {
@@ -1631,9 +1580,7 @@ private fun AttachOptionChip(
 
 @Composable
 private fun SendButton(
-    isLoading: Boolean,
-    isActive: Boolean,
-    onClick: () -> Unit
+    isLoading: Boolean, isActive: Boolean, onClick: () -> Unit
 ) {
     val bgColor by animateColorAsState(
         targetValue = if (isActive) MaterialTheme.colorScheme.primary
@@ -1657,14 +1604,11 @@ private fun SendButton(
             .clip(CircleShape)
             .bouncyClick(scaleDown = 0.88f) {
                 if (isActive) onClick()
-            }
-    ) {
+            }) {
         Box(contentAlignment = Alignment.Center) {
             if (isLoading) {
                 CircularProgressIndicator(
-                    modifier = Modifier.size(22.dp),
-                    color = iconColor,
-                    strokeWidth = 2.5.dp
+                    modifier = Modifier.size(22.dp), color = iconColor, strokeWidth = 2.5.dp
                 )
             } else {
                 Icon(
@@ -1710,8 +1654,7 @@ fun CalorieProgressCard(
         initialValue = 1f,
         targetValue = if (progress > 0.8f) 1.05f else 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(pulseDuration),
-            repeatMode = RepeatMode.Reverse
+            animation = tween(pulseDuration), repeatMode = RepeatMode.Reverse
         ),
         label = "PulseScale"
     )
@@ -1748,13 +1691,9 @@ fun CalorieProgressCard(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
-                    text = "$animatedCalories",
-                    style = MaterialTheme.typography.displayMedium.copy(
-                        fontWeight = FontWeight.Black,
-                        fontSize = 48.sp,
-                        letterSpacing = (-2).sp
-                    ),
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                    text = "$animatedCalories", style = MaterialTheme.typography.displayMedium.copy(
+                        fontWeight = FontWeight.Black, fontSize = 48.sp, letterSpacing = (-2).sp
+                    ), color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
 
                 Text(
@@ -1766,11 +1705,10 @@ fun CalorieProgressCard(
 
             val backgroundStrokeWidth = 14.dp
             val wavyStrokeWidth = 4.dp
-            val paddingCorrection = (backgroundStrokeWidth - wavyStrokeWidth) / 2
+            (backgroundStrokeWidth - wavyStrokeWidth) / 2
             Box(
                 contentAlignment = Alignment.Center,
-                modifier = Modifier.graphicsLayer { scaleX = pulseScale; scaleY = pulseScale }
-            ) {
+                modifier = Modifier.graphicsLayer { scaleX = pulseScale; scaleY = pulseScale }) {
                 CircularProgressIndicator(
                     progress = { 1f },
                     modifier = Modifier.size(110.dp),
