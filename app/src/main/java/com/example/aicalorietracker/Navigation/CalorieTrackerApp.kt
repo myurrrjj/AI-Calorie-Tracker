@@ -9,7 +9,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.aicalorietracker.AppContainer
 import com.example.aicalorietracker.ui.MealViewModel
 import com.example.aicalorietracker.ui.apiSetupScreen.ApiKeySetupScreen
-import com.example.aicalorietracker.ui.homescreen.DashboardScreen2
+import com.example.aicalorietracker.ui.home.DashboardScreen2
 
 @Composable
 fun CalorieTrackerApp(

@@ -88,7 +88,7 @@ Return ONLY raw, valid JSON in this exact format (no markdown blocks or backtick
             }
 
             val response = client.models.generateContent(
-                "gemini-2.5-flash",
+                "gemini-2.5-flash-lite",
                 contentBuilder.build(),
                 config
             )

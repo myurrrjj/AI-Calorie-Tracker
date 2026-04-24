@@ -34,14 +34,7 @@ fun isSameDay(date: LocalDate, timestamp: Long): Boolean {
     return date == logDate
 }
 
-data class MealUiState(
-    val isLoading: Boolean = false,
-    val meals: List<MealLog> = emptyList(),
-    val totalCalories: Int = 0,
-    val errorMessage: String? = null,
-    val targetCalories: Int = 2500,
-    val currentDate: LocalDate = LocalDate.now()
-)
+
 
 class MealViewModel(
     private val repository: MealRepository,
@@ -81,7 +74,7 @@ class MealViewModel(
                 val relevantPending = pendingMeals.filter { isSameDay(date, it.timeStamp) }
 
                 val allMeals = relevantPending + dbMeals
-                val currentTotalCalories = allMeals.sumOf { it.macros.calories }
+                val currentTotalCalories = allMeals.sumOf { it.effectiveCalories }
 
                 MealUiState(
                     meals = allMeals,
@@ -120,7 +113,8 @@ class MealViewModel(
             aiResponse = "Analysing...",
             macros = MacroNutrients(),
             micros = MicroNutrients(),
-            imagePath = imageUri?.toString()
+            imagePath = imageUri?.toString(),
+            quantity =  1f
         ).apply { isAnalysing = true }
 
         _pendingMeals.value = listOf(optimisticMeal) + _pendingMeals.value
@@ -173,6 +167,14 @@ class MealViewModel(
             repository.deleteSavedMeal(savedMeal)
         }
     }
+    fun updateMealQuantity(meal: MealLog, newQuantity: Float) {
+        if (meal.isAnalysing) return
+        val updatedMeal = meal.copy(quantity = newQuantity)
+        viewModelScope.launch {
+            repository.updateMeal(updatedMeal)
+        }
+    }
+
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {

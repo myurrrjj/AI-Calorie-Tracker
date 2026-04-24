@@ -59,8 +59,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.aicalorietracker.local.MealLog
 import com.example.aicalorietracker.ui.Utils.bouncyClick
-import com.example.aicalorietracker.ui.homescreen.MacroCard
-import com.example.aicalorietracker.ui.homescreen.MicroRowItem
+import com.example.aicalorietracker.ui.home.components.MacroCard
+import com.example.aicalorietracker.ui.home.components.MicroRowItem
+
+//import com.example.aicalorietracker.ui.home.MacroCard
+//import com.example.aicalorietracker.ui.home.MicroRowItem
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalSharedTransitionApi::class)
 @Composable

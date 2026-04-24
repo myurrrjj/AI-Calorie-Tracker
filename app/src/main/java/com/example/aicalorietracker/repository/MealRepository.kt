@@ -18,6 +18,7 @@ import java.io.FileOutputStream
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
+import androidx.core.net.toUri
 
 interface MealRepository {
 
@@ -28,7 +29,7 @@ interface MealRepository {
 
     fun getMealsForDay(startTime: Long, endTime: Long): Flow<List<MealLog>>
     fun getCaloriesForDay(startTime: Long, endTime: Long): Flow<Int?>
-
+    suspend fun updateMeal(mealLog: MealLog)
     fun getSavedMeals(): Flow<List<SavedMeal>>
     suspend fun saveMealToFavourites(mealLog: MealLog)
     suspend fun deleteSavedMeal(savedMeal: SavedMeal)
@@ -39,7 +40,7 @@ interface MealRepository {
 
 fun processAndSaveImage(context: Context, uriString: String): String? {
     return try {
-        val uri = Uri.parse(uriString)
+        val uri = uriString.toUri()
         val inputStream = context.contentResolver.openInputStream(uri) ?: return null
         val options = BitmapFactory.Options().apply {
             inSampleSize = 2
@@ -131,6 +132,9 @@ class OfflineMealRepository(
     override fun getSavedMeals(): Flow<List<SavedMeal>> {
         return savedMealDao.getAllSavedMeals()
     }
+    override suspend fun updateMeal(mealLog: MealLog) = withContext(Dispatchers.IO) {
+        mealDao.updateMeal(mealLog)
+    }
 
     override suspend fun saveMealToFavourites(mealLog: MealLog) {
         withContext(Dispatchers.IO) {
@@ -140,6 +144,7 @@ class OfflineMealRepository(
                 imagePath = mealLog.imagePath,
                 macros = mealLog.macros,
                 micros = mealLog.micros,
+                quantity = mealLog.quantity,
                 frequency = 0
             )
             savedMealDao.saveMeal(savedMeal)
