@@ -58,7 +58,8 @@ fun SharedTransitionScope.MealDetailOverlay2(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     onSaveToFavourites: (MealLog) -> Unit,
-    onQuantityChange: (MealLog, Float) -> Unit
+    onQuantityChange: (MealLog, Float) -> Unit,
+
 
 ) {
     AnimatedContent(
@@ -254,7 +255,12 @@ fun SharedTransitionScope.MealDetailOverlay2(
                                     MacroCard(
                                         "Protein",
                                         "${meal.effectiveProtein}g",
-                                        Modifier.fillMaxWidth(),
+                                        Modifier.fillMaxWidth().sharedBounds(
+                                            sharedContentState = rememberSharedContentState("protein.${meal.id}"),
+                                            animatedVisibilityScope = this@AnimatedContent,
+                                            resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds()
+
+                                        ),
                                         MaterialTheme.colorScheme.primaryContainer
                                     )
                                 }

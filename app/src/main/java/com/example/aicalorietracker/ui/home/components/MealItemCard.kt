@@ -61,7 +61,7 @@ fun MealItemCard2(
     meal: MealLog,
     onDelete: () -> Unit,
     onLongClick: () -> Unit,
-    onQuantitySelect: (MealLog,Float) -> Unit,
+    onQuantitySelect: (MealLog, Float) -> Unit,
     modifier: Modifier = Modifier,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope
@@ -72,7 +72,7 @@ fun MealItemCard2(
             initialQuantity = meal.quantity,
             onDismiss = { showQuantitySheet = false },
             onQuantitySelected = { newQuantity ->
-                onQuantitySelect(meal,newQuantity)
+                onQuantitySelect(meal, newQuantity)
                 showQuantitySheet = false
             }
         )
@@ -200,14 +200,28 @@ fun MealItemCard2(
                             text = "•",
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                         )
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer
+                        ) {
+                            with(sharedTransitionScope) {
+                                Text(
+                                    text = "${meal.effectiveProtein}g protein",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = FontWeight.Bold
+                                    ),
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                        .sharedBounds(
+                                            sharedContentState = rememberSharedContentState("protein.${meal.id}"),
+                                            animatedVisibilityScope = animatedVisibilityScope,
+                                            resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds()
 
-                        Text(
-                            text = "${meal.effectiveProtein}g protein",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.Bold
-                            ),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                                        )
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -216,7 +230,7 @@ fun MealItemCard2(
                 Spacer(Modifier.width(8.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically, modifier = Modifier
@@ -239,11 +253,11 @@ fun MealItemCard2(
                         )
                     }
 
-                    Spacer(Modifier.width(14.dp))
+                    Spacer(Modifier.width(1.dp))
                     IconButton(
                         onClick = onDelete,
                         modifier = Modifier
-                            .size(36.dp)
+                            .size(32.dp)
                             .background(
                                 MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
                                 CircleShape
@@ -253,7 +267,7 @@ fun MealItemCard2(
                             Icons.Default.Delete,
                             contentDescription = "Delete",
                             tint = MaterialTheme.colorScheme.onErrorContainer,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(16.dp)
                         )
                     }
                 }
