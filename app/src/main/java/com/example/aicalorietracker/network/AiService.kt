@@ -50,6 +50,7 @@ RULES:
 
 Return ONLY raw, valid JSON in this exact format (no markdown blocks or backticks):
 {
+  "shortNameOfMeal": ""
   "aiResponse": "Brief summary",
   "calories": 0,
   "macros": {
@@ -88,7 +89,7 @@ Return ONLY raw, valid JSON in this exact format (no markdown blocks or backtick
             }
 
             val response = client.models.generateContent(
-                "gemini-2.5-flash-lite",
+                "gemini-2.5-flash",
                 contentBuilder.build(),
                 config
             )

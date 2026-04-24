@@ -268,6 +268,9 @@ fun DashboardScreen2(
                             totalCalories = pageState.totalCalories,
                             targetCalories = pageState.targetCalories,
                             showDailyAnalytics = showDailyAnalytics
+                            , onQuantitySelected = {mealLog,newQty->
+                                viewModel.updateMealQuantity(mealLog,newQty)
+                            }
                         )
                     }
 

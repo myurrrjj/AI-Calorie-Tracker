@@ -44,7 +44,8 @@ fun DayView2(
     onMealLongClick: (MealLog) -> Unit,
     sharedTransitionScope: SharedTransitionScope,
     onCardClick: () -> Unit,
-    showDailyAnalytics: Boolean
+    showDailyAnalytics: Boolean,
+    onQuantitySelected:(MealLog,Float)->Unit
 ) {
     val listState = rememberLazyListState()
 
@@ -141,6 +142,9 @@ fun DayView2(
                                         ),
                                     sharedTransitionScope = sharedTransitionScope,
                                     animatedVisibilityScope = this@AnimatedVisibility,
+                                    onQuantitySelect = { mealLog,newQty->
+                                        onQuantitySelected(mealLog,newQty)
+                                    }
                                 )
                             }
                         }
