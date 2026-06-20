@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">AI Calorie Tracker</string>
+    <string name="AI_CALORIE_TRACKER" />
 </resources>

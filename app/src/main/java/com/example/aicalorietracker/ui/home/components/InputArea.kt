@@ -2,6 +2,8 @@ package com.example.aicalorietracker.ui.home.components
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.health.connect.datatypes.HeartRateRecord
+import android.health.connect.datatypes.StepsRecord
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -61,10 +63,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.health.connect.client.PermissionController
+import androidx.health.connect.client.permission.HealthPermission
 import coil.compose.AsyncImage
 import com.example.aicalorietracker.ui.Utils.bouncyClick
 //import com.example.aicalorietracker.ui.home.AttachOptionChip
 import com.example.aicalorietracker.ui.home.createTempImageUri
+import kotlinx.coroutines.coroutineScope
 import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -101,6 +106,8 @@ fun InputArea(
             cameraLauncher.launch(uri)
         }
     }
+
+
 
     val attachIconRotation by animateFloatAsState(
         targetValue = if (attachMenuOpen) 45f else 0f, animationSpec = spring(

@@ -21,6 +21,8 @@ interface MealDao {
     @Query("SELECT * FROM meal_logs ORDER BY timeStamp DESC")
     fun getAllMeals(): Flow<List<MealLog>>
 
+    @Query("SELECT * FROM meal_logs WHERE timeStamp BETWEEN :startTime AND :endTime ORDER BY timeStamp ASC")
+    fun getMealsForDateRange(startTime: Long, endTime: Long): Flow<List<MealLog>>
     @Query("SELECT * FROM meal_logs WHERE timeStamp BETWEEN :startTime AND :endTime ORDER BY timeStamp DESC")
     fun getMealsForDay(startTime: Long, endTime: Long): Flow<List<MealLog>>
 

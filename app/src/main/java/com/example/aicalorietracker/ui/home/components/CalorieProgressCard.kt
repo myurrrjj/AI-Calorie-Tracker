@@ -18,10 +18,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Insights
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -46,6 +50,7 @@ fun CalorieProgressCard(
     onEditClick: () -> Unit,
     activeMealId: MealLog?,
     onClick: () -> Unit,
+    onChartClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val animatedCalories by animateIntAsState(
@@ -77,7 +82,7 @@ fun CalorieProgressCard(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .height(220.dp)
+            .height(240.dp)
             .bouncyClick(onClick = onClick),
         shape = RoundedCornerShape(32.dp),
         color = MaterialTheme.colorScheme.primaryContainer,
@@ -117,11 +122,34 @@ fun CalorieProgressCard(
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Medium),
                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f)
                 )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Surface(
+                    color = MaterialTheme.colorScheme.tertiaryContainer,
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.bouncyClick { onChartClick() }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Rounded.Insights,
+                            contentDescription = "Trends",
+                            tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            "View Trends",
+                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                        )
+                    }
+                }
             }
 
-            val backgroundStrokeWidth = 14.dp
-            val wavyStrokeWidth = 4.dp
-            (backgroundStrokeWidth - wavyStrokeWidth) / 2
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier.graphicsLayer { scaleX = pulseScale; scaleY = pulseScale }) {
@@ -145,7 +173,6 @@ fun CalorieProgressCard(
                     wavelength = WavyProgressIndicatorDefaults.CircularWavelength,
                     waveSpeed = WavyProgressIndicatorDefaults.CircularWavelength,
                     stroke = WavyProgressIndicatorDefaults.circularIndicatorStroke
-
                 )
 
                 Text(

@@ -11,6 +11,7 @@ import com.example.aicalorietracker.local.MacroNutrients
 import com.example.aicalorietracker.local.MealLog
 import com.example.aicalorietracker.local.MicroNutrients
 import com.example.aicalorietracker.local.SavedMeal
+import com.example.aicalorietracker.repository.HealthRepository
 import com.example.aicalorietracker.repository.MealRepository
 import com.example.aicalorietracker.repository.UserPreferencesRepository
 import kotlinx.coroutines.Dispatchers
@@ -35,12 +36,12 @@ fun isSameDay(date: LocalDate, timestamp: Long): Boolean {
 }
 
 
-
 class MealViewModel(
     private val repository: MealRepository,
-    private val preferencesRepository: UserPreferencesRepository
+    private val preferencesRepository: UserPreferencesRepository,
+    private val healthRepository: HealthRepository
 ) : ViewModel() {
-
+    private val _refreshHealthData = MutableStateFlow(System.currentTimeMillis())
     private val dayFlowCache = mutableMapOf<LocalDate, Flow<MealUiState>>()
 
 
@@ -49,13 +50,17 @@ class MealViewModel(
     private val _targetCalories = MutableStateFlow(preferencesRepository.getTargetCalories())
 
     val savedMeals: StateFlow<List<SavedMeal>> = repository.getSavedMeals()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000),emptyList())
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     fun getApiKey(): String? = preferencesRepository.getApiKey()
 
     fun saveApiKey(key: String) {
         preferencesRepository.saveApiKey(key)
     }
 
+    fun refreshHealthData() {
+        _refreshHealthData.value = System.currentTimeMillis()
+    }
     val today: LocalDate
         get() = LocalDate.now()
 
@@ -68,17 +73,18 @@ class MealViewModel(
             combine(
                 repository.getMealsForDay(startOfDay, endOfDay),
                 _targetCalories, _pendingMeals,
-                _errorMessage
-            ) { dbMeals, target, pendingMeals, error ->
+                _errorMessage, _refreshHealthData
+            ) { dbMeals, target, pendingMeals, error, _ ->
 
                 val relevantPending = pendingMeals.filter { isSameDay(date, it.timeStamp) }
 
                 val allMeals = relevantPending + dbMeals
                 val currentTotalCalories = allMeals.sumOf { it.effectiveCalories }
-
+                val burnedCalories = healthRepository.getBurnedCaloriesForDay(date)
                 MealUiState(
                     meals = allMeals,
                     totalCalories = currentTotalCalories,
+                    burnedCalories = burnedCalories,
                     isLoading = relevantPending.isNotEmpty(),
                     errorMessage = error,
                     currentDate = date,
@@ -114,7 +120,7 @@ class MealViewModel(
             macros = MacroNutrients(),
             micros = MicroNutrients(),
             imagePath = imageUri?.toString(),
-            quantity =  1f
+            quantity = 1f
         ).apply { isAnalysing = true }
 
         _pendingMeals.value = listOf(optimisticMeal) + _pendingMeals.value
@@ -146,11 +152,11 @@ class MealViewModel(
         _errorMessage.value = null
     }
 
-    fun quickLogSavedMeal(savedMeal: SavedMeal,date: LocalDate){
+    fun quickLogSavedMeal(savedMeal: SavedMeal, date: LocalDate) {
         viewModelScope.launch {
             _errorMessage.value = null
-            val result = repository.quickLogSavedMeal(savedMeal,date)
-            result.onFailure { exception->
+            val result = repository.quickLogSavedMeal(savedMeal, date)
+            result.onFailure { exception ->
                 _errorMessage.value = exception.localizedMessage ?: "Error Logging Saved Meal"
             }
         }
@@ -167,6 +173,7 @@ class MealViewModel(
             repository.deleteSavedMeal(savedMeal)
         }
     }
+
     fun updateMealQuantity(meal: MealLog, newQuantity: Float) {
         if (meal.isAnalysing) return
         val updatedMeal = meal.copy(quantity = newQuantity)
@@ -182,7 +189,8 @@ class MealViewModel(
                     (this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as CalorieTrackerApplication)
                 MealViewModel(
                     repository = application.container.mealRepository,
-                    preferencesRepository = application.container.userPreferencesRepository
+                    preferencesRepository = application.container.userPreferencesRepository,
+                    healthRepository = application.container.healthRepository
                 )
             }
         }

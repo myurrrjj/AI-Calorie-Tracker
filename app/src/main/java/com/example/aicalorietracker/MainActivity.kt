@@ -9,12 +9,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import com.example.aicalorietracker.Navigation.CalorieTrackerApp
+import com.example.aicalorietracker.local.AppDatabase
 import com.example.aicalorietracker.ui.theme.AICalorieTrackerTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
+//        val mealDao = AppDatabase.getDatabase(applicationContext).mealDao()
+//        seedDatabaseForGraphTesting(mealDao)
         enableEdgeToEdge()
         val appContainer = (application as CalorieTrackerApplication).container
         setContent {

@@ -36,6 +36,7 @@ interface MealRepository {
     suspend fun quickLogSavedMeal(savedMeal: SavedMeal, date: LocalDate): Result<MealLog>
 
 
+    fun getMealsForDateRange(startTime: Long, endTime: Long): Flow<List<MealLog>>
 }
 
 fun processAndSaveImage(context: Context, uriString: String): String? {
@@ -134,6 +135,10 @@ class OfflineMealRepository(
     }
     override suspend fun updateMeal(mealLog: MealLog) = withContext(Dispatchers.IO) {
         mealDao.updateMeal(mealLog)
+    }
+
+    override fun getMealsForDateRange(startTime: Long, endTime: Long): Flow<List<MealLog>> {
+        return mealDao.getMealsForDateRange(startTime, endTime)
     }
 
     override suspend fun saveMealToFavourites(mealLog: MealLog) {

@@ -8,15 +8,17 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.aicalorietracker.AppContainer
 import com.example.aicalorietracker.ui.MealViewModel
+import com.example.aicalorietracker.ui.analytics.AnalyticsViewModel
+import com.example.aicalorietracker.ui.analytics.chart.AnalyticsChartScreen
 import com.example.aicalorietracker.ui.apiSetupScreen.ApiKeySetupScreen
-import com.example.aicalorietracker.ui.home.DashboardScreen2
+import com.example.aicalorietracker.ui.home.DashboardScreen
 
 @Composable
 fun CalorieTrackerApp(
     appContainer: AppContainer,
     navController: NavHostController = rememberNavController()
 ) {
-    val mealViewModel: MealViewModel = viewModel(factory = MealViewModel.Companion.Factory)
+    val mealViewModel: MealViewModel = viewModel(factory = MealViewModel.Factory)
 
     NavHost(
         navController = navController,
@@ -24,10 +26,13 @@ fun CalorieTrackerApp(
     ) {
         composable<DashboardRoute> {
 
-            DashboardScreen2(
+            DashboardScreen(
                 viewModel = mealViewModel,
                 onNavigateToApiGuide = {
                     navController.navigate(ApiKeySetupRoute)
+                },
+                onNavigateToAnalyticsChart = {
+                    navController.navigate(AnalyticsChartRoute)
                 }
             )
         }
@@ -38,6 +43,15 @@ fun CalorieTrackerApp(
                 onNavigateBack = {
                     navController.navigateUp()
                 }
+            )
+        }
+        composable<AnalyticsChartRoute> {
+            val analyticsViewModel: AnalyticsViewModel = viewModel(factory = AnalyticsViewModel.Factory)
+            AnalyticsChartScreen(
+                viewModel = analyticsViewModel,
+                onNavigateBack = {
+                    navController.navigateUp()
+                },
             )
         }
     }

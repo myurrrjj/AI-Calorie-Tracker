@@ -11,40 +11,27 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.rounded.HelpOutline
 import androidx.compose.material.icons.rounded.Key
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -55,14 +42,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.aicalorietracker.CalorieTrackerApplication
 import com.example.aicalorietracker.local.MealLog
 import com.example.aicalorietracker.ui.DailyAnalyticsScreen
 import com.example.aicalorietracker.ui.MealUiState
@@ -70,7 +56,7 @@ import com.example.aicalorietracker.ui.MealViewModel
 import com.example.aicalorietracker.ui.Utils.bouncyClick
 import com.example.aicalorietracker.ui.dialogs.ApiKeyQuickDialog
 import com.example.aicalorietracker.ui.dialogs.EditTargetDialog
-import com.example.aicalorietracker.ui.home.components.DayView2
+import com.example.aicalorietracker.ui.home.components.DayView
 import com.example.aicalorietracker.ui.home.components.InputArea
 import com.example.aicalorietracker.ui.home.components.MealDetailOverlay2
 import com.example.aicalorietracker.ui.home.components.SavedMealsBottomSheet
@@ -86,9 +72,14 @@ private val HEADER_DATE_FORMATTER = DateTimeFormatter.ofPattern("EEEE, MMM d")
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun DashboardScreen2(
-    viewModel: MealViewModel, onNavigateToApiGuide: () -> Unit
+fun DashboardScreen(
+    viewModel: MealViewModel,
+    onNavigateToApiGuide: () -> Unit,
+    onNavigateToAnalyticsChart: () -> Unit
 ) {
+    val appContainer =
+        (LocalContext.current.applicationContext as CalorieTrackerApplication).container
+    val healthConnectManager = appContainer.healthConnectManager
     var showDailyAnalytics by remember { mutableStateOf(false) }
     var showApiDialog by remember { mutableStateOf(false) }
     var showSavedMealsSheet by remember { mutableStateOf(false) }
@@ -257,7 +248,7 @@ fun DashboardScreen2(
                         val pageState by viewModel.getDayFlow(pageDate)
                             .collectAsStateWithLifecycle(MealUiState())
 
-                        DayView2(
+                        DayView(
                             meals = pageState.meals,
                             sharedTransitionScope = this@SharedTransitionLayout,
                             activeMealId = activeMeal,
@@ -267,10 +258,14 @@ fun DashboardScreen2(
                             onCardClick = { showDailyAnalytics = true },
                             totalCalories = pageState.totalCalories,
                             targetCalories = pageState.targetCalories,
-                            showDailyAnalytics = showDailyAnalytics
-                            , onQuantitySelected = {mealLog,newQty->
-                                viewModel.updateMealQuantity(mealLog,newQty)
-                            }
+                            showDailyAnalytics = showDailyAnalytics,
+                            onQuantitySelected = { mealLog, newQty ->
+                                viewModel.updateMealQuantity(mealLog, newQty)
+                            },
+                            healthConnectManager = healthConnectManager,
+                            onHealthPermissionsGranted = { viewModel.refreshHealthData() },
+                            burnedCalories = pageState.burnedCalories,
+                            onNavigateToAnalyticsChart = onNavigateToAnalyticsChart
                         )
                     }
 
@@ -312,8 +307,6 @@ fun DashboardScreen2(
         }
     }
 }
-
-
 
 
 fun createTempImageUri(context: Context): Uri {

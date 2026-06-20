@@ -10,7 +10,7 @@ plugins {
 
 android {
     namespace = "com.example.aicalorietracker"
-    compileSdk =35
+    compileSdk =37
     packaging {
         resources {
             excludes += "/META-INF/INDEX.LIST"
@@ -24,7 +24,7 @@ android {
     defaultConfig {
         applicationId = "com.example.aicalorietracker"
         minSdk = 26
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 1
         versionName = "1.0"
 
@@ -45,12 +45,16 @@ android {
 
     buildTypes {
         release {
+            isDebuggable = false
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            applicationIdSuffix = ".release"
+            signingConfig = signingConfigs.getByName("debug")
         }
+
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -69,29 +73,28 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
-//    implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
+
+    implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
     implementation("com.google.genai:google-genai:1.40.0")
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
-    implementation("androidx.compose.material3:material3:1.5.0-alpha15")
-    implementation(libs.androidx.compose.ui.text)
     implementation("io.coil-kt:coil-compose:2.6.0")
     implementation("androidx.security:security-crypto-ktx:1.1.0-alpha06")
-//    implementation(platform("com.google.firebase:firebase-bom:34.9.0"))
-//
-//    implementation("com.google.firebase:firebase-ai")
-    val room_version = "2.6.1"
 
+    val room_version = "2.6.1"
     implementation("androidx.navigation:navigation-compose:2.8.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
     implementation("androidx.room:room-runtime:$room_version")
     implementation("androidx.room:room-ktx:$room_version")
     ksp("androidx.room:room-compiler:2.6.1")
+    implementation("androidx.health.connect:connect-client:1.1.0")
+
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
+    implementation("androidx.compose.material3:material3:1.5.0-alpha15")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
