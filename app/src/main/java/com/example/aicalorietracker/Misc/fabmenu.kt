@@ -157,9 +157,7 @@ Box {
                 modifier =
                     Modifier.semantics {
                         isTraversalGroup = true
-                        // Add a custom a11y action to allow closing the menu when focusing
-                        // the last menu item, since the close button comes before the first
-                        // menu item in the traversal order.
+
                         if (i == items.size - 1) {
                             customActions =
                                 listOf(
@@ -176,8 +174,7 @@ Box {
                         .then(
                             if (i == 0) {
                                 Modifier.onKeyEvent {
-                                    // Navigating back from the first item should go back to the
-                                    // FAB menu button.
+
                                     if (
                                         it.type == KeyEventType.KeyDown &&
                                         (it.key == Key.DirectionUp ||

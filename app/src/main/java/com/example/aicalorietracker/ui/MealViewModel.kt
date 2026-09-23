@@ -11,6 +11,7 @@ import com.example.aicalorietracker.local.MacroNutrients
 import com.example.aicalorietracker.local.MealLog
 import com.example.aicalorietracker.local.MicroNutrients
 import com.example.aicalorietracker.local.SavedMeal
+import com.example.aicalorietracker.network.GeminiModelOption
 import com.example.aicalorietracker.repository.HealthRepository
 import com.example.aicalorietracker.repository.MealRepository
 import com.example.aicalorietracker.repository.UserPreferencesRepository
@@ -19,6 +20,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
@@ -43,7 +45,14 @@ class MealViewModel(
 ) : ViewModel() {
     private val _refreshHealthData = MutableStateFlow(System.currentTimeMillis())
     private val dayFlowCache = mutableMapOf<LocalDate, Flow<MealUiState>>()
+   private val _availableModels = MutableStateFlow<List<GeminiModelOption>>(emptyList())
+    val availableModels : StateFlow<List<GeminiModelOption>> = _availableModels.asStateFlow()
 
+    private val _selectedModel =
+        MutableStateFlow<GeminiModelOption?>(null)
+
+    val selectedModel: StateFlow<GeminiModelOption?> =
+        _selectedModel.asStateFlow()
 
     private val _errorMessage = MutableStateFlow<String?>(null)
     private val _pendingMeals = MutableStateFlow<List<MealLog>>(emptyList())
@@ -61,9 +70,36 @@ class MealViewModel(
     fun refreshHealthData() {
         _refreshHealthData.value = System.currentTimeMillis()
     }
+
+
     val today: LocalDate
         get() = LocalDate.now()
 
+
+    init {
+        loadAvailableModels()
+    }
+
+    fun loadAvailableModels() {
+        viewModelScope.launch {
+            repository.getAvailableModels()
+                .onSuccess { models ->
+                    _availableModels.value = models
+
+                    if (_selectedModel.value == null) {
+                        _selectedModel.value = models.firstOrNull()
+                    }
+                }
+                .onFailure { exception ->
+                    _errorMessage.value =
+                        exception.localizedMessage ?: "Failed to load AI models"
+                }
+        }
+    }
+
+    fun selectModel(model: GeminiModelOption) {
+        _selectedModel.value = model
+    }
     fun getDayFlow(date: LocalDate): Flow<MealUiState> {
         return dayFlowCache.getOrPut(date) {
             val startOfDay = date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
@@ -110,11 +146,16 @@ class MealViewModel(
             .toInstant()
             .toEpochMilli()
 
+        val modelName = _selectedModel.value?.name
+            ?:return
+
+
         val tempId = -Random.nextInt(1, 100000)
 
         val optimisticMeal = MealLog(
             id = tempId,
             timeStamp = optimisticTimestamp,
+            shortName = "Meal",
             userRequest = userText.ifBlank { "Image Analysis" },
             aiResponse = "Analysing...",
             macros = MacroNutrients(),
@@ -128,7 +169,7 @@ class MealViewModel(
             _errorMessage.value = null
             val uriString = imageUri?.toString()
 
-            val result = repository.addMealLog(uriString, userText, date)
+            val result = repository.addMealLog(uriString, userText, date,modelName)
 
             _pendingMeals.value = _pendingMeals.value.filter { it.id != tempId }
 

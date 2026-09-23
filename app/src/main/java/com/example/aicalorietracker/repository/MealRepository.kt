@@ -4,12 +4,16 @@ package com.example.aicalorietracker.repository
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.net.Uri
+import android.util.Log
+import androidx.core.net.toUri
 import com.example.aicalorietracker.local.MealDao
 import com.example.aicalorietracker.local.MealLog
 import com.example.aicalorietracker.local.SavedMeal
 import com.example.aicalorietracker.local.SavedMealDao
 import com.example.aicalorietracker.network.AiService
+import com.example.aicalorietracker.network.GeminiModelOption
+import com.google.genai.Client
+import com.google.genai.types.ListModelsConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
@@ -18,13 +22,12 @@ import java.io.FileOutputStream
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
-import androidx.core.net.toUri
 
 interface MealRepository {
 
     fun getMealHistory(): Flow<List<MealLog>>
 
-    suspend fun addMealLog(localPath: String?, userText: String, date: LocalDate): Result<MealLog>
+    suspend fun addMealLog(localPath: String?, userText: String, date: LocalDate,modelName:String): Result<MealLog>
     suspend fun deleteLog(mealLog: MealLog)
 
     fun getMealsForDay(startTime: Long, endTime: Long): Flow<List<MealLog>>
@@ -35,7 +38,7 @@ interface MealRepository {
     suspend fun deleteSavedMeal(savedMeal: SavedMeal)
     suspend fun quickLogSavedMeal(savedMeal: SavedMeal, date: LocalDate): Result<MealLog>
 
-
+    suspend fun getAvailableModels(): Result<List<GeminiModelOption>>
     fun getMealsForDateRange(startTime: Long, endTime: Long): Flow<List<MealLog>>
 }
 
@@ -76,7 +79,7 @@ class OfflineMealRepository(
     }
 
     override suspend fun addMealLog(
-        imageUri: String?, userText: String, date: LocalDate
+        imageUri: String?, userText: String, date: LocalDate,modelName:String
     ): Result<MealLog> {
 
 
@@ -87,8 +90,11 @@ class OfflineMealRepository(
 
 
                 val finalLocalPath = imageUri?.let { processAndSaveImage(context, it) }
-                val result = aiService.analyseMeal(apiKey, finalLocalPath, userText)
+//                val modelList = getAvailableModels()
+//                val modelName = modelList.getOrNull()?.firstOrNull()?.name ?: "gemini-3.5-flash"
 
+                Log.d("AI MODEL", "Model Name: $modelName")
+                val result = aiService.analyseMeal(apiKey, finalLocalPath, userText, modelName)
                 result.map { mealLog ->
                     val nowTime = LocalTime.now()
                     val correctTimeStamp =
@@ -133,6 +139,7 @@ class OfflineMealRepository(
     override fun getSavedMeals(): Flow<List<SavedMeal>> {
         return savedMealDao.getAllSavedMeals()
     }
+
     override suspend fun updateMeal(mealLog: MealLog) = withContext(Dispatchers.IO) {
         mealDao.updateMeal(mealLog)
     }
@@ -145,6 +152,7 @@ class OfflineMealRepository(
         withContext(Dispatchers.IO) {
             val savedMeal = SavedMeal(
                 userRequest = mealLog.userRequest,
+                shortName = mealLog.shortName,
                 aiResponse = mealLog.aiResponse,
                 imagePath = mealLog.imagePath,
                 macros = mealLog.macros,
@@ -163,8 +171,7 @@ class OfflineMealRepository(
     }
 
     override suspend fun quickLogSavedMeal(
-        savedMeal: SavedMeal,
-        date: LocalDate
+        savedMeal: SavedMeal, date: LocalDate
     ): Result<MealLog> {
         return withContext(Dispatchers.IO) {
             try {
@@ -174,6 +181,7 @@ class OfflineMealRepository(
 
                 val newMealLog = MealLog(
                     timeStamp = correctTimeStamp,
+                    shortName = savedMeal.shortName,
                     userRequest = savedMeal.userRequest,
                     aiResponse = savedMeal.aiResponse,
                     imagePath = savedMeal.imagePath,
@@ -189,5 +197,57 @@ class OfflineMealRepository(
             }
         }
     }
+
+    override suspend fun getAvailableModels(): Result<List<GeminiModelOption>> =
+        withContext(
+            Dispatchers.IO
+        ) {
+            try {
+                val apiKey = userPreferencesRepository.getApiKey()
+                    ?: throw Exception("API Key is missing")
+                val client = Client.builder().apiKey(apiKey).build()
+
+                val models = client.models
+                    .list(ListModelsConfig.builder().build())
+                    .asSequence()
+                    .filter { model ->
+                        model.supportedActions()
+                            .orElse(emptyList())
+                            .contains("generateContent")
+                    }
+                    .filter { model ->
+                        val name = model.name()
+                            .orElse("")
+                            .lowercase()
+
+                        !name.contains("image") &&
+                                !name.contains("imagen") &&
+                                !name.contains("veo") &&
+                                !name.contains("lyria") &&
+                                !name.contains("nano") &&
+                                !name.contains("tts") &&
+                                !name.contains("antigravity")
+                                && !name.contains("research")
+                    }
+                    .mapNotNull { model ->
+                        val name = model.name().orElse(null)
+                            ?: return@mapNotNull null
+
+                        GeminiModelOption(
+                            name = name.removePrefix("models/"),
+                            displayName = model.displayName().orElse(name),
+                            description = model.description().orElse("")
+                        )
+                    }
+                    .toList()
+
+                Result.success(models)
+
+
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+
 
 }

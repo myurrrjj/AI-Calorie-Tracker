@@ -12,6 +12,7 @@ data class MealLog(
     val id: Int = 0,
     val timeStamp: Long = System.currentTimeMillis(),
     val userRequest: String,
+    val shortName:String,
     val aiResponse: String,
     val imagePath: String? = null,
     val quantity:Float = 1f,
@@ -43,6 +44,7 @@ data class MealLog(
 
 fun SavedMeal.toMealLog() = MealLog(
     id = 0,
+    shortName = this.shortName,
     timeStamp = System.currentTimeMillis(),
     userRequest = this.userRequest,
     aiResponse = this.aiResponse,
@@ -57,6 +59,7 @@ data class SavedMeal(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
     val userRequest: String,
+    val shortName:String,
     val aiResponse: String,
     val imagePath: String? = null,
     val frequency : Int = 0,

@@ -2,6 +2,7 @@ package com.example.aicalorietracker.ui.home
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
@@ -19,9 +20,12 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.rounded.Api
 import androidx.compose.material.icons.rounded.Key
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -60,6 +64,7 @@ import com.example.aicalorietracker.ui.home.components.DayView
 import com.example.aicalorietracker.ui.home.components.InputArea
 import com.example.aicalorietracker.ui.home.components.MealDetailOverlay2
 import com.example.aicalorietracker.ui.home.components.SavedMealsBottomSheet
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
 import java.time.Instant
@@ -100,6 +105,11 @@ fun DashboardScreen(
     }
 
     val currentDate = getDateForPage(pagerState.currentPage)
+    val models by viewModel.availableModels.collectAsStateWithLifecycle()
+    val selectedModel by viewModel.selectedModel.collectAsStateWithLifecycle()
+    Log.d("AI MODEL", "Model Name: ${selectedModel?.name}")
+
+    var modelSelection by remember { mutableStateOf(false) }
 
     var showDatePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState()
@@ -151,7 +161,16 @@ fun DashboardScreen(
             initialKey = viewModel.getApiKey() ?: "",
             onDismiss = { showApiDialog = false },
             onSave = { key ->
+
                 viewModel.saveApiKey(key)
+                while(viewModel.getApiKey() == null){
+                    Log.d("API KEY", "API KEY IS NULL")
+                }
+
+
+                viewModel.loadAvailableModels()
+
+
                 showApiDialog = false
             },
             onHelpClick = {
@@ -203,7 +222,48 @@ fun DashboardScreen(
                             Surface(
                                 shape = CircleShape,
                                 color = MaterialTheme.colorScheme.primaryContainer,
-                                modifier = Modifier.bouncyClick(onClick = { showApiDialog = true })
+                                modifier = Modifier.bouncyClick(onClick = {
+                                    modelSelection = true
+                                    })
+                            ) {
+
+                                DropdownMenu(
+                                    expanded = modelSelection,
+                                    onDismissRequest = {
+                                        modelSelection = false
+                                    }
+                                ) {
+                                    models.forEach {
+                                        model->
+                                        DropdownMenuItem(
+                                            text = {
+                                                Text(model.displayName)
+                                            },
+                                            onClick = {
+//                                                if (models.isEmpty()) viewModel::loadAvailableModels
+                                                viewModel.selectModel(model)
+                                                Log.d("AI MODEL", "Model Name: ${selectedModel?.name}")
+
+                                                modelSelection = false
+                                            }
+                                        )
+                                    }
+                                }
+                                Box(Modifier.padding(12.dp)) {
+                                    Icon(
+                                        Icons.Rounded.Api,
+                                        contentDescription = "API Key",
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                }
+                            }
+
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                modifier = Modifier.bouncyClick(onClick = {
+
+                                    showApiDialog = true })
                             ) {
                                 Box(Modifier.padding(12.dp)) {
                                     Icon(

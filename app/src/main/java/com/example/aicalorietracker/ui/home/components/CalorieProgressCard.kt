@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Insights
@@ -82,7 +83,7 @@ fun CalorieProgressCard(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .height(240.dp)
+            .wrapContentHeight()
             .bouncyClick(onClick = onClick),
         shape = RoundedCornerShape(32.dp),
         color = MaterialTheme.colorScheme.primaryContainer,

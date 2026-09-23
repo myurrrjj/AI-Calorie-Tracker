@@ -150,7 +150,7 @@ fun MealItemCard2(
 
             Column(Modifier.weight(1f)) {
                 Text(
-                    text = meal.userRequest,
+                    text = meal.shortName,
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold, letterSpacing = 0.sp
                     ),

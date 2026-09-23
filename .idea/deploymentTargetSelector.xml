@@ -4,10 +4,10 @@
     <selectionStates>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-12-28T09:18:06.341828400Z">
+        <DropdownSelection timestamp="2026-09-23T08:28:32.177373128Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\mayur\.android\avd\Pixel_8_Pro.avd" />
+              <DeviceId pluginId="Wireless" identifier="serviceName=adb-ZD222KPW5V-bNH1Gd" />
             </handle>
           </Target>
         </DropdownSelection>
@@ -33,6 +33,17 @@
           <Target type="DEFAULT_BOOT">
             <handle>
               <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\mayur\.android\avd\Pixel_8_Pro.avd" />
+            </handle>
+          </Target>
+        </DropdownSelection>
+        <DialogSelection />
+      </SelectionState>
+      <SelectionState runConfigName="androidTest">
+        <option name="selectionMode" value="DROPDOWN" />
+        <DropdownSelection timestamp="2026-09-23T07:45:59.038091935Z">
+          <Target type="DEFAULT_BOOT">
+            <handle>
+              <DeviceId pluginId="Wireless" identifier="serviceName=adb-ZD222KPW5V-bNH1Gd" />
             </handle>
           </Target>
         </DropdownSelection>

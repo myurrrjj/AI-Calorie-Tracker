@@ -36,9 +36,9 @@ android {
 
 //        buildConfigField("String","GEMINI_API_KEY","\"TestKey123\"")
 
-        val apiKey = localProperties.getProperty("GEMINI_API_KEY") ?: ""
-        buildConfigField("String", "GEMINI_API_KEY", "\"${apiKey}\"")
-
+//        val apiKey = localProperties.getProperty("GEMINI_API_KEY") ?: ""
+//        buildConfigField("String", "GEMINI_API_KEY", "\"${apiKey}\"")
+//
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -46,7 +46,8 @@ android {
     buildTypes {
         release {
             isDebuggable = false
-            isMinifyEnabled = false
+//            isMinifyEnabled = true
+//            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

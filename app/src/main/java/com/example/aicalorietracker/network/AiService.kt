@@ -1,64 +1,68 @@
 package com.example.aicalorietracker.network
 
-import android.R.attr.apiKey
-import android.graphics.BitmapFactory
 import android.graphics.Bitmap
-import com.example.aicalorietracker.BuildConfig
+import android.graphics.BitmapFactory
+import android.util.Log
 import com.example.aicalorietracker.local.MacroNutrients
 import com.example.aicalorietracker.local.MealLog
 import com.example.aicalorietracker.local.MicroNutrients
-import org.json.JSONObject
 import com.google.genai.Client
-import com.google.genai.types.GenerateContentConfig
-import com.google.genai.types.Tool
-import com.google.genai.types.GoogleSearch
-import com.google.genai.types.Content
-import com.google.genai.types.Part
 import com.google.genai.types.Blob
+import com.google.genai.types.Content
+import com.google.genai.types.GenerateContentConfig
+import com.google.genai.types.GoogleSearch
+import com.google.genai.types.Part
+import com.google.genai.types.Tool
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 
 class AiService {
 
 
-    private val searchTool = Tool.builder()
-        .googleSearch(GoogleSearch.builder().build())
+    private val searchTool = Tool.builder().googleSearch(GoogleSearch.builder().build()).build()
+
+    private val config = GenerateContentConfig.builder().temperature(0.2f).topK(32f).topP(0.95f)
+//        .tools(listOf(searchTool))
         .build()
 
-    private val config = GenerateContentConfig.builder()
-        .temperature(0.2f)
-        .topK(32f)
-        .topP(0.95f)
-        .tools(listOf(searchTool))
-        .build()
-
-    suspend fun analyseMeal(apiKey:String,localPath: String?, userText: String): Result<MealLog> = withContext(Dispatchers.IO) {
+    suspend fun analyseMeal(
+        apiKey: String, localPath: String?, userText: String, modelName: String
+    ): Result<MealLog> = withContext(Dispatchers.IO) {
         return@withContext try {
-             val client = Client.builder()
-                .apiKey(apiKey)
-                .build()
+            val client = Client.builder().apiKey(apiKey).build()
 
 
             val prompt = """
-Analyze this meal description: "$userText".
+Analyze this meal and estimate its nutrition from the quantity provided:
 
-RULES:
-1. For generic foods, homemade meals, and produce, estimate nutrition from internal memory. DO NOT search the web.
-2. ONLY use Google Search if the input contains a specific branded/packaged product to find its exact nutritional label.
-3. If the input is not food, return all zeros and a polite aiResponse.
+"$userText"
 
-Return ONLY raw, valid JSON in this exact format (no markdown blocks or backticks):
+Rules:
+- Return EVERY field shown below. Never omit fields or return null.
+- Use reasonable nutritional estimates for the stated quantity. If quantity is missing, use a standard serving.
+- If the input is not food, return 0 for all nutrients.
+- Return numbers only, without units, text, ranges, or percentages.
+- Return ONLY valid JSON. No markdown or extra text.
+
+Units:
+calories = kcal
+protein, carbs, fat, fiber, sugar = g
+vitaminA = mcg RAE
+vitaminC, iron, calcium, sodium, potassium = mg
+vitaminD = mcg
+
 {
-  "shortNameOfMeal": ""
-  "aiResponse": "Brief summary",
+  "shortNameOfMeal": "",
+  "aiResponse": "",
   "calories": 0,
   "macros": {
-    "protein": 0,
-    "carbs": 0,
-    "fat": 0,
-    "fiber": 0,
-    "sugar": 0
+    "protein": 0.0,
+    "carbs": 0.0,
+    "fat": 0.0,
+    "fiber": 0.0,
+    "sugar": 0.0
   },
   "micros": {
     "vitaminA": 0.0,
@@ -72,6 +76,9 @@ Return ONLY raw, valid JSON in this exact format (no markdown blocks or backtick
 }
 """.trimIndent()
 
+
+            Log.d("Ai response", "")
+
             val contentBuilder = Content.builder().role("user")
 
             if (localPath != null) {
@@ -80,26 +87,25 @@ Return ONLY raw, valid JSON in this exact format (no markdown blocks or backtick
                 bitmap.compress(Bitmap.CompressFormat.JPEG, 80, stream)
                 val byteArray = stream.toByteArray()
 
-                contentBuilder.parts(listOf(
-                    Part.builder().inlineData(Blob.builder().data(byteArray).mimeType("image/jpeg").build()).build(),
-                    Part.builder().text(prompt).build()
-                ))
+                contentBuilder.parts(
+                    listOf(
+                        Part.builder().inlineData(
+                            Blob.builder().data(byteArray).mimeType("image/jpeg").build()
+                        ).build(), Part.builder().text(prompt).build()
+                    )
+                )
             } else {
                 contentBuilder.parts(listOf(Part.builder().text(prompt).build()))
             }
 
             val response = client.models.generateContent(
-                "gemini-2.5-flash",
-                contentBuilder.build(),
-                config
+                modelName, contentBuilder.build(), config
             )
+
 
             val rawString = response.text() ?: throw Exception("Empty response from AI")
 
-            val cleanedJsonString = rawString
-                .replace("```json", "")
-                .replace("```", "")
-                .trim()
+            val cleanedJsonString = rawString.replace("```json", "").replace("```", "").trim()
 
             val resultMeal = parseJsonToMealLog(cleanedJsonString, userText)
             Result.success(resultMeal)
@@ -107,6 +113,7 @@ Return ONLY raw, valid JSON in this exact format (no markdown blocks or backtick
             Result.failure(e)
         }
     }
+
 
     private fun parseJsonToMealLog(jsonString: String, originalText: String): MealLog {
         val json = JSONObject(jsonString)
@@ -137,6 +144,11 @@ Return ONLY raw, valid JSON in this exact format (no markdown blocks or backtick
             aiResponse = json.optString("aiResponse", "Logged."),
             macros = macros,
             micros = micros,
-        )
+            shortName = json.optString("shortNameOfMeal", originalText))
+
     }
 }
+
+data class GeminiModelOption(
+    val name: String, val displayName: String, val description: String
+)

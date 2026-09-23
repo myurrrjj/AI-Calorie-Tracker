@@ -3,6 +3,7 @@ package com.example.aicalorietracker.repository
 import android.content.Context
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
+import androidx.core.content.edit
 
 class UserPreferencesRepository(context: Context) {
     private val prefs = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
@@ -25,7 +26,7 @@ class UserPreferencesRepository(context: Context) {
 
     fun getApiKey(): String? = securePrefs.getString("gemini_api_key", null)
     fun saveApiKey(key:String){
-        securePrefs.edit().putString("gemini_api_key",key).apply()
+        securePrefs.edit { putString("gemini_api_key", key) }
 
     }
     fun deleteApiKey() {
