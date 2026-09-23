@@ -29,6 +29,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.rounded.BookmarkAdd
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -345,9 +346,9 @@ fun SharedTransitionScope.MealDetailOverlay2(
                                     modifier = Modifier.padding(24.dp),
                                     verticalArrangement = Arrangement.spacedBy(16.dp)
                                 ) {
-                                    MicroRowItem("Vitamin A", "${meal.effectiveVitaminA.toInt()}", "IU")
+                                    MicroRowItem("Vitamin A", "${meal.effectiveVitaminA.toInt()}", "mcg RAE")
                                     MicroRowItem("Vitamin C", "${meal.effectiveVitaminC.toInt()}", "mg")
-                                    MicroRowItem("Vitamin D", "${meal.effectiveVitaminD.toInt()}", "IU")
+                                    MicroRowItem("Vitamin D", "${meal.effectiveVitaminD.toInt()}", "mcg")
                                     HorizontalDivider(
                                         color = MaterialTheme.colorScheme.outlineVariant.copy(0.3f)
                                     )
@@ -391,6 +392,7 @@ fun MacroCard(
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun MicroRowItem(label: String, value: String, unit: String) {
     Row(
@@ -410,7 +412,7 @@ fun MicroRowItem(label: String, value: String, unit: String) {
         Row(verticalAlignment = Alignment.Bottom) {
             Text(
                 text = value,
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                style = MaterialTheme.typography.titleSmallEmphasized.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(modifier = Modifier.width(4.dp))

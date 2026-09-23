@@ -39,7 +39,8 @@ import com.example.aicalorietracker.ui.analytics.components.MacroVerticalCard
 @Composable
 fun SharedTransitionScope.DailyAnalyticsScreen(
     animatedVisibilityScope: AnimatedVisibilityScope,
-    state: MealUiState, onDismiss: () -> Unit
+    state: MealUiState,
+    onDismiss: () -> Unit
 ) {
     val totals = remember(state.meals) {
         state.meals.fold(AnalyticsTotals()) { acc, meal ->
@@ -47,147 +48,173 @@ fun SharedTransitionScope.DailyAnalyticsScreen(
         }
     }
 
-//    val visibleState = remember { MutableTransitionState(false).apply { targetState = true } }
-//
     BackHandler {
-//        visibleState.targetState = false
         onDismiss()
     }
 
-//    AnimatedVisibility(
-//        visibleState = visibleState, enter = EnterTransition.None
-//
-//    ) {
-        Scaffold(
-            modifier = Modifier
-                .sharedBounds(
+    Scaffold(
+        modifier = Modifier
+            .sharedBounds(
                 rememberSharedContentState("detailscreen"),
                 animatedVisibilityScope = animatedVisibilityScope,
                 resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds()
-            )
-            ,
-            containerColor = MaterialTheme.colorScheme.surface, topBar = {
-                CenterAlignedTopAppBar(
-                    title = { Text("Daily Breakdown", fontWeight = FontWeight.Bold) },
-                    navigationIcon = {
-                        IconButton(onClick = {
-//                            visibleState.targetState = false
-                            onDismiss()
-                        }) {
-                            Icon(Icons.Default.Close, contentDescription = "Close")
-                        }
-                    },
-                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surface
+            ),
+        containerColor = MaterialTheme.colorScheme.surface,
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        "Daily Breakdown",
+                        fontWeight = FontWeight.Bold
                     )
+                },
+                navigationIcon = {
+                    IconButton(
+                        onClick = onDismiss
+                    ) {
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = "Close"
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface
                 )
-            }) { padding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(24.dp)
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
             ) {
-                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    BigCalorieRing(
-                        current = state.totalCalories, target = state.targetCalories
+                BigCalorieRing(
+                    current = state.totalCalories,
+                    target = state.targetCalories
+                )
+            }
+
+            Text(
+                text = "Macro Split",
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.Bold
+                )
+            )
+
+            MacroVerticalCard(
+                protein = totals.protein,
+                carbs = totals.carbs,
+                fat = totals.fat,
+                proteinColor = MaterialTheme.colorScheme.primary,
+                carbsColor = MaterialTheme.colorScheme.secondary,
+                fatColor = MaterialTheme.colorScheme.tertiary,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Text(
+                text = "Nutrition Details",
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.Bold
+                )
+            )
+
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    DetailStatCard(
+                        "Fiber",
+                        "${totals.fiber} g",
+                        "🥗",
+                        Modifier.weight(1f)
+                    )
+                    DetailStatCard(
+                        "Sugar",
+                        "${totals.sugar} g",
+                        "🍬",
+                        Modifier.weight(1f)
                     )
                 }
-
-                Text(
-                    "Macro Split",
-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-                )
 
                 Row(
-                    Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    MacroVerticalCard(
-                        "Protein",
-                        totals.protein,
-                        150,
-                        MaterialTheme.colorScheme.primary,
-                        MaterialTheme.colorScheme.primaryContainer,
-                        MaterialTheme.colorScheme.onPrimaryContainer,
+                    DetailStatCard(
+                        "Vitamin A",
+                        "${totals.vitaminA} mcg RAE",
+                        "🥕",
                         Modifier.weight(1f)
                     )
-                    MacroVerticalCard(
-                        "Carbs",
-                        totals.carbs,
-                        300,
-                        MaterialTheme.colorScheme.secondary,
-                        MaterialTheme.colorScheme.secondaryContainer,
-                        MaterialTheme.colorScheme.onSecondaryContainer,
-                        Modifier.weight(1f)
-                    )
-                    MacroVerticalCard(
-                        "Fats",
-                        totals.fat,
-                        80,
-                        MaterialTheme.colorScheme.tertiary,
-                        MaterialTheme.colorScheme.tertiaryContainer,
-                        MaterialTheme.colorScheme.onTertiaryContainer,
+                    DetailStatCard(
+                        "Vitamin C",
+                        "${totals.vitaminC} mg",
+                        "🍊",
                         Modifier.weight(1f)
                     )
                 }
 
-                Text(
-                    "Nutrition Details",
-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-                )
-
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        DetailStatCard("Fiber", "${totals.fiber}g", "🥗", Modifier.weight(1f))
-                        DetailStatCard("Sugar", "${totals.sugar}g", "🍬", Modifier.weight(1f))
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        DetailStatCard(
-                            "Vitamin A",
-                            "${totals.vitaminA} IU",
-                            "🥕",
-                            Modifier.weight(1f)
-                        )
-                        DetailStatCard(
-                            "Vitamin C",
-                            "${totals.vitaminC}mg",
-                            "🍊",
-                            Modifier.weight(1f)
-                        )
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        DetailStatCard(
-                            "Vitamin D",
-                            "${totals.vitaminD} IU",
-                            "☀️",
-                            Modifier.weight(1f)
-                        )
-                        DetailStatCard("Calcium", "${totals.calcium}mg", "🥛", Modifier.weight(1f))
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        DetailStatCard("Iron", "${totals.iron}mg", "🦾", Modifier.weight(1f))
-                        DetailStatCard(
-                            "Potassium",
-                            "${totals.potassium}mg",
-                            "🍌",
-                            Modifier.weight(1f)
-                        )
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        DetailStatCard("Sodium", "${totals.sodium}mg", "🧂", Modifier.weight(1f))
-                        Spacer(Modifier.weight(1f))
-                    }
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    DetailStatCard(
+                        "Vitamin D",
+                        "${totals.vitaminD} mcg",
+                        "☀️",
+                        Modifier.weight(1f)
+                    )
+                    DetailStatCard(
+                        "Calcium",
+                        "${totals.calcium} mg",
+                        "🥛",
+                        Modifier.weight(1f)
+                    )
                 }
 
-                Spacer(Modifier.height(48.dp))
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    DetailStatCard(
+                        "Iron",
+                        "${totals.iron} mg",
+                        "🦾",
+                        Modifier.weight(1f)
+                    )
+                    DetailStatCard(
+                        "Potassium",
+                        "${totals.potassium} mg",
+                        "🍌",
+                        Modifier.weight(1f)
+                    )
+                }
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    DetailStatCard(
+                        "Sodium",
+                        "${totals.sodium} mg",
+                        "🧂",
+                        Modifier.weight(1f)
+                    )
+                    Spacer(
+                        Modifier.weight(1f)
+                    )
+                }
             }
+
+            Spacer(
+                Modifier.height(48.dp)
+            )
         }
-//    }
+    }
 }
-
-
-
-
-
