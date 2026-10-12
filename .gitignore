@@ -18,4 +18,4 @@ local.properties
 keystore.properties
 *.jks
 *.keystore
-
+app/release
