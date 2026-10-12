@@ -8,16 +8,20 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization") version "2.0.21"
 }
 
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(keystorePropertiesFile.inputStream())
+}
+
 android {
     namespace = "com.myurrrjj.trackabite"
     compileSdk =37
     packaging {
         resources {
             excludes += "/META-INF/INDEX.LIST"
-
             excludes += "/META-INF/DEPENDENCIES"
-//            excludes += "/META-INF/LICENSE.md"
-//            excludes += "/META-INF/LICENSE-notice.md"
+
         }
     }
 
@@ -34,13 +38,17 @@ android {
             localProperties.load(localPropertiesFile.inputStream())
         }
 
-//        buildConfigField("String","GEMINI_API_KEY","\"TestKey123\"")
-
-//        val apiKey = localProperties.getProperty("GEMINI_API_KEY") ?: ""
-//        buildConfigField("String", "GEMINI_API_KEY", "\"${apiKey}\"")
-//
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        create("release") {
+            storeFile = file(keystoreProperties.getProperty("storeFile"))
+            storePassword = keystoreProperties.getProperty("storePassword")
+            keyAlias = keystoreProperties.getProperty("keyAlias")
+            keyPassword = keystoreProperties.getProperty("keyPassword")
+        }
     }
 
     buildTypes {
@@ -52,8 +60,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            applicationIdSuffix = ".release"
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
 
     }
