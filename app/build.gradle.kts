@@ -9,7 +9,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.aicalorietracker"
+    namespace = "com.myurrrjj.trackabite"
     compileSdk =37
     packaging {
         resources {
@@ -22,7 +22,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.aicalorietracker"
+        applicationId = "com.myurrrjj.trackabite"
         minSdk = 26
         targetSdk = 37
         versionCode = 1

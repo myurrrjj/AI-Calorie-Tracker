@@ -28,7 +28,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:label="@string/AI_CALORIE_TRACKER"
+            android:label="@string/app_name"
             android:theme="@style/Theme.AICalorieTracker">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
