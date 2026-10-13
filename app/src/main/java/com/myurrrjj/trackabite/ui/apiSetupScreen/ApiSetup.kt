@@ -24,8 +24,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.Check
@@ -97,7 +99,13 @@ class ApiKeyViewModel(private val userPreferencesRepository: UserPreferencesRepo
     }
 
     val isValidKey: Boolean
-        get() = apiKeyInput.startsWith("AIza") && apiKeyInput.length > 30
+        get() {
+            val k = apiKeyInput.trim()
+            return k.length in 20..400 &&
+                    k.none { it.isWhitespace() } &&
+                    (k.startsWith("AIza") || k.startsWith("AQ."))
+        }
+
 }
 
 class ApiKeyViewModelFactory(private val repository: UserPreferencesRepository) : ViewModelProvider.Factory {
@@ -342,7 +350,7 @@ private fun GuideStep(
     onAction: () -> Unit
 ) {
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {

@@ -1,0 +1,19 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+
+    <!-- Leaf body (white). Traced from the TrackABite logo, 45deg diagonal. -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillType="nonZero"
+        android:pathData="M22.90,77.70 C54.92,73.19 73.19,54.92 77.69,22.90 C45.08,26.81 26.82,45.08 22.31,77.10 Z" />
+
+    <!-- Vein: the split line, drawn in brand green so it reads as negative space on green. -->
+    <path
+        android:strokeColor="#0F9D58"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:pathData="M24.67,75.93 L75.92,24.67" />
+</vector>

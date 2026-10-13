@@ -2,4 +2,10 @@
 <resources>
 
     <style name="Theme.AICalorieTracker" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.AICalorieTracker.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/brand_green</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_leaf</item>
+        <item name="postSplashScreenTheme">@style/Theme.AICalorieTracker</item>
+    </style>
+
 </resources>

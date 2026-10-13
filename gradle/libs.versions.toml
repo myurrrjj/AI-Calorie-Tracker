@@ -14,6 +14,8 @@ material = "1.13.0"
 uiText = "1.10.0"
 material3 = "1.4.0"
 uiGraphics = "1.11.3"
+coreSplashscreen = "1.0.1"
+
 
 [libraries]
 androidx-connect-client = { module = "androidx.health.connect:connect-client", version.ref = "connectClient" }
@@ -32,6 +34,8 @@ androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-
 androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "coreSplashscreen" }
+
 
 
 [plugins]

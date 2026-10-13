@@ -163,9 +163,9 @@ fun DashboardScreen(
             onSave = { key ->
 
                 viewModel.saveApiKey(key)
-                while(viewModel.getApiKey() == null){
-                    Log.d("API KEY", "API KEY IS NULL")
-                }
+//                while(viewModel.getApiKey() == null){
+//                    Log.d("API KEY", "API KEY IS NULL")
+//                }
 
 
                 viewModel.loadAvailableModels()
