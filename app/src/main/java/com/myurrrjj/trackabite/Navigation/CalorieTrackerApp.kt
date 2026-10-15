@@ -1,6 +1,7 @@
 package com.myurrrjj.trackabite.Navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -12,6 +13,7 @@ import com.myurrrjj.trackabite.ui.analytics.AnalyticsViewModel
 import com.myurrrjj.trackabite.ui.analytics.chart.AnalyticsChartScreen
 import com.myurrrjj.trackabite.ui.apiSetupScreen.ApiKeySetupScreen
 import com.myurrrjj.trackabite.ui.home.DashboardScreen
+import com.myurrrjj.trackabite.ui.onboarding.OnboardingScreen
 
 @Composable
 fun CalorieTrackerApp(
@@ -19,39 +21,64 @@ fun CalorieTrackerApp(
     navController: NavHostController = rememberNavController()
 ) {
     val mealViewModel: MealViewModel = viewModel(factory = MealViewModel.Factory)
+    val preferences = appContainer.userPreferencesRepository
+
+    val startDestination = remember {
+        if (preferences.hasCompletedOnboarding()) DashboardRoute else OnboardingRoute
+    }
 
     NavHost(
         navController = navController,
-        startDestination = DashboardRoute
+        startDestination = startDestination
     ) {
-        composable<DashboardRoute> {
-
-            DashboardScreen(
-                viewModel = mealViewModel,
-                onNavigateToApiGuide = {
-                    navController.navigate(ApiKeySetupRoute)
+        composable<OnboardingRoute> {
+            OnboardingScreen(
+                onGetStarted = {
+                    preferences.setOnboardingCompleted()
+                    navController.navigate(ApiKeySetupRoute) {
+                        popUpTo<OnboardingRoute> { inclusive = true }
+                    }
                 },
-                onNavigateToAnalyticsChart = {
-                    navController.navigate(AnalyticsChartRoute)
+                onSkip = {
+                    preferences.setOnboardingCompleted()
+                    navController.navigate(DashboardRoute) {
+                        popUpTo<OnboardingRoute> { inclusive = true }
+                    }
                 }
             )
         }
 
         composable<ApiKeySetupRoute> {
             ApiKeySetupScreen(
-                repository = appContainer.userPreferencesRepository,
+                repository = preferences,
                 onNavigateBack = {
-                    navController.navigateUp()
+                    navController.navigate(DashboardRoute) {
+                        popUpTo<ApiKeySetupRoute> { inclusive = true }
+                        launchSingleTop = true
+                    }
+                },
+                onSkip = {
+                    navController.navigate(DashboardRoute) {
+                        popUpTo<ApiKeySetupRoute> { inclusive = true }
+                        launchSingleTop = true
+                    }
                 }
             )
         }
+
+        composable<DashboardRoute> {
+            DashboardScreen(
+                viewModel = mealViewModel,
+                onNavigateToApiGuide = { navController.navigate(ApiKeySetupRoute) },
+                onNavigateToAnalyticsChart = { navController.navigate(AnalyticsChartRoute) }
+            )
+        }
+
         composable<AnalyticsChartRoute> {
             val analyticsViewModel: AnalyticsViewModel = viewModel(factory = AnalyticsViewModel.Factory)
             AnalyticsChartScreen(
                 viewModel = analyticsViewModel,
-                onNavigateBack = {
-                    navController.navigateUp()
-                },
+                onNavigateBack = { navController.navigateUp() }
             )
         }
     }

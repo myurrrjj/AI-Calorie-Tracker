@@ -9,36 +9,44 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.ZonedDateTime
+
+data class EnergyBurn(
+    val activeCalories: Int = 0,
+    val basalCalories: Int = 0
+) {
+    val totalCalories: Int get() = activeCalories + basalCalories
+}
 
 interface HealthRepository {
-    suspend fun getBurnedCaloriesForDay(date: LocalDate): Int
+    suspend fun getEnergyBurnForDay(date: LocalDate): EnergyBurn
 }
 
 class DefaultHealthRepository(
     private val healthConnectClient: HealthConnectClient?
 ) : HealthRepository {
-    override suspend fun getBurnedCaloriesForDay(date: LocalDate): Int {
-        if (healthConnectClient == null) return 0
+    override suspend fun getEnergyBurnForDay(date: LocalDate): EnergyBurn {
+        val client = healthConnectClient ?: return EnergyBurn()
         return withContext(Dispatchers.IO) {
             try {
                 val startOfDay = date.atStartOfDay(ZoneId.systemDefault()).toInstant()
                 val endOfDay = date.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant()
-                val timeRangeFilter = TimeRangeFilter.between(startOfDay, endOfDay)
                 val request = AggregateRequest(
-                    metrics = setOf(TotalCaloriesBurnedRecord.ENERGY_TOTAL),
-                    timeRangeFilter = timeRangeFilter
+                    metrics = setOf(
+                        TotalCaloriesBurnedRecord.ENERGY_TOTAL,
+                        ActiveCaloriesBurnedRecord.ACTIVE_CALORIES_TOTAL
+                    ),
+                    timeRangeFilter = TimeRangeFilter.between(startOfDay, endOfDay)
                 )
-
-                val response = healthConnectClient.aggregate(request)
-                val totalEnergy = response[TotalCaloriesBurnedRecord.ENERGY_TOTAL]
-                totalEnergy?.inKilocalories?.toInt()?:0
-
-            }catch (e: Exception){
-                e.printStackTrace()
-                0
+                val response = client.aggregate(request)
+                val total = response[TotalCaloriesBurnedRecord.ENERGY_TOTAL]?.inKilocalories?.toInt() ?: 0
+                val active = response[ActiveCaloriesBurnedRecord.ACTIVE_CALORIES_TOTAL]?.inKilocalories?.toInt() ?: 0
+                EnergyBurn(
+                    activeCalories = active,
+                    basalCalories = (total - active).coerceAtLeast(0)
+                )
+            } catch (e: Exception) {
+                EnergyBurn()
             }
         }
     }
-
 }

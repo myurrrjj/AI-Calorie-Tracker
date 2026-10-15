@@ -1,5 +1,6 @@
 package com.myurrrjj.trackabite.local
 
+import androidx.room.ColumnInfo
 import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.Ignore
@@ -59,6 +60,8 @@ data class SavedMeal(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
     val userRequest: String,
+
+//    @ColumnInfo(defaultValue = "")
     val shortName:String,
     val aiResponse: String,
     val imagePath: String? = null,

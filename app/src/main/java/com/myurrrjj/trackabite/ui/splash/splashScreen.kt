@@ -1,8 +1,6 @@
 package com.myurrrjj.trackabite.ui.splash
 
-
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -78,7 +76,6 @@ fun SplashScreen(
     val ruleProgress = remember { Animatable(0f) }
     val tagAlpha = remember { Animatable(0f) }
     val tagOffsetY = remember { Animatable(18f) }
-    val exit = remember { Animatable(0f) }
 
     val bouncy = spring<Float>(
         dampingRatio = Spring.DampingRatioMediumBouncy,
@@ -116,7 +113,6 @@ fun SplashScreen(
         }
 
         delay(2450)
-        exit.animateTo(1f, tween(durationMillis = 430, easing = FastOutLinearInEasing))
         onAnimationFinished()
     }
 
@@ -137,18 +133,12 @@ fun SplashScreen(
         Specks(Modifier.fillMaxSize())
 
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.graphicsLayer {
-                alpha = 1f - exit.value
-                val s = 1f + 0.14f * exit.value
-                scaleX = s
-                scaleY = s
-            }
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Box(contentAlignment = Alignment.Center) {
                 BreathingGlow(entry = glowIn.value)
                 Leaf(
-                    scale = leafScale.value,
+                    entryScale = leafScale.value,
                     rotation = leafRotation.value,
                     veinProgress = veinProgress.value
                 )
@@ -199,7 +189,7 @@ fun SplashScreen(
 
 @Composable
 private fun Leaf(
-    scale: Float,
+    entryScale: Float,
     rotation: Float,
     veinProgress: Float,
     modifier: Modifier = Modifier
@@ -212,13 +202,13 @@ private fun Leaf(
         modifier = modifier
             .size(152.dp)
             .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
+                scaleX = entryScale
+                scaleY = entryScale
                 rotationZ = rotation
             }
     ) {
-        val s = size.minDimension / 100f
-        scale(s, s, pivot = center) {
+        val unit = size.minDimension / 100f
+        scale(unit, unit, pivot = Offset.Zero) {
             drawPath(body, color = Color.White)
 
             if (veinProgress > 0f) {
@@ -317,5 +307,5 @@ private fun Specks(modifier: Modifier = Modifier) {
 @Preview(showBackground = true, widthDp = 360, heightDp = 780)
 @Composable
 private fun SplashScreenPreview() {
-    SplashScreen()  
+    SplashScreen()
 }

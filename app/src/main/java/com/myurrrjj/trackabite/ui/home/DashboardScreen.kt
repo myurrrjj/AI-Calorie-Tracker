@@ -324,8 +324,9 @@ fun DashboardScreen(
                             },
                             healthConnectManager = healthConnectManager,
                             onHealthPermissionsGranted = { viewModel.refreshHealthData() },
-                            burnedCalories = pageState.burnedCalories,
-                            onNavigateToAnalyticsChart = onNavigateToAnalyticsChart
+                            onNavigateToAnalyticsChart = onNavigateToAnalyticsChart,
+                            activeCalories = pageState.activeCalories,
+                            basalCalories = pageState.basalCalories
                         )
                     }
 

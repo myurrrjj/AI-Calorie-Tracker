@@ -39,7 +39,8 @@ fun DayView(
     meals: List<MealLog>,
     totalCalories: Int,
     targetCalories: Int,
-    burnedCalories: Int,
+    activeCalories: Int,
+    basalCalories: Int,
     activeMealId: MealLog?,
     onDelete: (MealLog) -> Unit,
     onEditGoal: () -> Unit,
@@ -73,11 +74,13 @@ fun DayView(
                     Spacer(modifier = Modifier.height(16.dp))
                     AnimatedVisibility(visible = !showDailyAnalytics) {
                         Column {
-                            CaloriesBurnedCard(
+                            EnergyBurnCard(
+                                activeCalories = activeCalories,
+                                basalCalories = basalCalories,
                                 healthConnectManager = healthConnectManager,
-                                burnedCalories = burnedCalories,
                                 onPermissionsGranted = { onHealthPermissionsGranted() }
                             )
+
                             Spacer(modifier = Modifier.height(16.dp))
 
                             CalorieProgressCard(

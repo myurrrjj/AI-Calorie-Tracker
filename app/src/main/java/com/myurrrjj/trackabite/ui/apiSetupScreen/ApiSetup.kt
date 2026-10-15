@@ -43,6 +43,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -122,7 +123,8 @@ class ApiKeyViewModelFactory(private val repository: UserPreferencesRepository) 
 @Composable
 fun ApiKeySetupScreen(
     repository: UserPreferencesRepository,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onSkip: () -> Unit
 ) {
     val viewModel: ApiKeyViewModel = viewModel(factory = ApiKeyViewModelFactory(repository))
     val context = LocalContext.current
@@ -334,6 +336,19 @@ fun ApiKeySetupScreen(
                         Spacer(modifier = Modifier.width(8.dp))
                         Icon(Icons.Rounded.ArrowForward, contentDescription = "Save")
                     }
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    TextButton(
+                        onClick = onSkip,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "Skip for now",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
                 }
             }
         }

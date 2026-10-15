@@ -44,6 +44,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
@@ -136,14 +137,14 @@ fun SharedTransitionScope.MealDetailOverlay2(
                             )
 
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                IconButton(
-                                    onClick = { onSaveToFavourites(meal) },
+                                Box(
                                     modifier = Modifier
-                                        .background(
-                                            MaterialTheme.colorScheme.primaryContainer, CircleShape
-                                        )
                                         .size(40.dp)
-                                        .bouncyClick { onSaveToFavourites(meal) }) {
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.primaryContainer)
+                                        .bouncyClick { onSaveToFavourites(meal) },
+                                    contentAlignment = Alignment.Center
+                                ) {
                                     Icon(
                                         Icons.Rounded.BookmarkAdd,
                                         contentDescription = "Save Meal",
@@ -151,13 +152,15 @@ fun SharedTransitionScope.MealDetailOverlay2(
                                         tint = MaterialTheme.colorScheme.onPrimaryContainer
                                     )
                                 }
-                                IconButton(
-                                    onClick = { onDismiss() }, modifier = Modifier
-                                        .background(
-                                            MaterialTheme.colorScheme.surfaceVariant, CircleShape
-                                        )
+
+                                Box(
+                                    modifier = Modifier
                                         .size(40.dp)
-                                        .bouncyClick { onDismiss() }) {
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                                        .bouncyClick { onDismiss() },
+                                    contentAlignment = Alignment.Center
+                                ) {
                                     Icon(
                                         Icons.Default.Close,
                                         contentDescription = "Close",
@@ -165,6 +168,7 @@ fun SharedTransitionScope.MealDetailOverlay2(
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
+
                             }
                         }
 

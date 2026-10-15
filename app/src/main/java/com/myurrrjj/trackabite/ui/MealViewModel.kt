@@ -116,16 +116,18 @@ class MealViewModel(
 
                 val allMeals = relevantPending + dbMeals
                 val currentTotalCalories = allMeals.sumOf { it.effectiveCalories }
-                val burnedCalories = healthRepository.getBurnedCaloriesForDay(date)
+                val energyBurn = healthRepository.getEnergyBurnForDay(date)
                 MealUiState(
                     meals = allMeals,
                     totalCalories = currentTotalCalories,
-                    burnedCalories = burnedCalories,
+                    activeCalories = energyBurn.activeCalories,
+                    basalCalories = energyBurn.basalCalories,
                     isLoading = relevantPending.isNotEmpty(),
                     errorMessage = error,
                     currentDate = date,
                     targetCalories = target
                 )
+
             }.flowOn(Dispatchers.Default)
         }
     }

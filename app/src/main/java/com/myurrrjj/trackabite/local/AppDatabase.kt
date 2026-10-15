@@ -33,6 +33,12 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+//        private val MIGRATION4_5 = object : Migration(4,5){
+//            override fun migrate(db: SupportSQLiteDatabase) {
+//                db.execSQL("ALTER TABLE savedMeals ADD COLUMN shortName TEXT NOT NULL DEFAULT ''")
+//            }
+//        }
+
         fun getDatabase(context: Context): AppDatabase {
             return Instance ?: synchronized(this) {
                 Room.databaseBuilder(
@@ -41,7 +47,6 @@ abstract class AppDatabase : RoomDatabase() {
                     "calorie_tracker_database"
                 )
                     .addMigrations(MIGRATION2_3, MIGRATION3_4)
-                    .fallbackToDestructiveMigration()
                     .build()
                     .also { Instance = it }
             }

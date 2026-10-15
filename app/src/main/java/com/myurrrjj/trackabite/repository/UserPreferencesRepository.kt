@@ -24,13 +24,16 @@ class UserPreferencesRepository(context: Context) {
         prefs.edit().putInt("target_calories", calories).apply()
     }
 
-    fun getApiKey(): String? = securePrefs.getString("gemini_api_key", null)
-    fun saveApiKey(key:String){
-        securePrefs.edit { putString("gemini_api_key", key) }
+    fun hasCompletedOnboarding(): Boolean = prefs.getBoolean("onboarding_completed", false)
+    fun setOnboardingCompleted() {
+        prefs.edit().putBoolean("onboarding_completed", true).apply()
+    }
 
+    fun getApiKey(): String? = securePrefs.getString("gemini_api_key", null)
+    fun saveApiKey(key: String) {
+        securePrefs.edit { putString("gemini_api_key", key) }
     }
     fun deleteApiKey() {
         securePrefs.edit().remove("gemini_api_key").apply()
     }
-
 }
