@@ -41,6 +41,7 @@ fun DayView(
     targetCalories: Int,
     activeCalories: Int,
     basalCalories: Int,
+    isBasalEstimated: Boolean,
     activeMealId: MealLog?,
     onDelete: (MealLog) -> Unit,
     onEditGoal: () -> Unit,
@@ -77,6 +78,7 @@ fun DayView(
                             EnergyBurnCard(
                                 activeCalories = activeCalories,
                                 basalCalories = basalCalories,
+                                isBasalEstimated = isBasalEstimated,
                                 healthConnectManager = healthConnectManager,
                                 onPermissionsGranted = { onHealthPermissionsGranted() }
                             )

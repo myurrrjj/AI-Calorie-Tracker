@@ -9,7 +9,9 @@ data class MealUiState(
     val totalCalories: Int = 0,
     val activeCalories: Int = 0,
     val basalCalories: Int = 0,
+    val isBasalEstimated: Boolean =false,
+
     val errorMessage: String? = null,
-    val targetCalories: Int = 2500,
+    val targetCalories: Int = 2000,
     val currentDate: LocalDate = LocalDate.now()
 )

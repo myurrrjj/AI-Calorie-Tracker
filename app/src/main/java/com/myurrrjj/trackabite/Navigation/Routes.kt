@@ -10,5 +10,10 @@ object DashboardRoute
 @Serializable
 object ApiKeySetupRoute
 
+
+
 @Serializable
 object AnalyticsChartRoute
+
+@Serializable
+object SettingsRoute

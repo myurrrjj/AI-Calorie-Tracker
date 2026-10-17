@@ -28,16 +28,19 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
     }
     override val mealRepository: MealRepository by lazy {
         OfflineMealRepository(
-            aiService = aiService, mealDao = database.mealDao(),
+            aiService = aiService,
+            mealDao = database.mealDao(),
             context = context,
             savedMealDao = database.savedMealDao(),
             userPreferencesRepository = userPreferencesRepository
         )
     }
-    override val healthConnectManager: HealthConnectManager by lazy{
+    override val healthConnectManager: HealthConnectManager by lazy {
         HealthConnectManager(context)
     }
     override val healthRepository: HealthRepository by lazy {
-        DefaultHealthRepository(healthConnectManager.healthConnectClient)
+        DefaultHealthRepository(
+            healthConnectManager.healthConnectClient,
+            profileProvider = { userPreferencesRepository.profile.value })
     }
 }

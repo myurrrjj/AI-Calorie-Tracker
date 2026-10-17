@@ -2,7 +2,6 @@ package com.myurrrjj.trackabite.ui.home
 
 import android.content.Context
 import android.net.Uri
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
@@ -12,20 +11,21 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.rounded.Api
 import androidx.compose.material.icons.rounded.Key
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -64,7 +64,6 @@ import com.myurrrjj.trackabite.ui.home.components.DayView
 import com.myurrrjj.trackabite.ui.home.components.InputArea
 import com.myurrrjj.trackabite.ui.home.components.MealDetailOverlay2
 import com.myurrrjj.trackabite.ui.home.components.SavedMealsBottomSheet
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
 import java.time.Instant
@@ -80,7 +79,9 @@ private val HEADER_DATE_FORMATTER = DateTimeFormatter.ofPattern("EEEE, MMM d")
 fun DashboardScreen(
     viewModel: MealViewModel,
     onNavigateToApiGuide: () -> Unit,
-    onNavigateToAnalyticsChart: () -> Unit
+    onNavigateToAnalyticsChart: () -> Unit,
+    onNavigateToSettings: () -> Unit
+
 ) {
     val appContainer =
         (LocalContext.current.applicationContext as CalorieTrackerApplication).container
@@ -104,12 +105,15 @@ fun DashboardScreen(
         return viewModel.today.plusDays(diff.toLong())
     }
 
-    val currentDate = getDateForPage(pagerState.currentPage)
-    val models by viewModel.availableModels.collectAsStateWithLifecycle()
-    val selectedModel by viewModel.selectedModel.collectAsStateWithLifecycle()
-    Log.d("AI MODEL", "Model Name: ${selectedModel?.name}")
+    val hasApiKey by viewModel.hasApiKey.collectAsStateWithLifecycle()
 
-    var modelSelection by remember { mutableStateOf(false) }
+
+    val currentDate = getDateForPage(pagerState.currentPage)
+//    val models by viewModel.availableModels.collectAsStateWithLifecycle()
+//    val selectedModel by viewModel.selectedModel.collectAsStateWithLifecycle()
+//    Log.d("AI MODEL", "Model Name: ${selectedModel?.name}")
+//
+//    var modelSelection by remember { mutableStateOf(false) }
 
     var showDatePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState()
@@ -196,99 +200,122 @@ fun DashboardScreen(
                 snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
                 containerColor = MaterialTheme.colorScheme.background,
                 topBar = {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 48.dp, start = 24.dp, end = 24.dp, bottom = 16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            val dateText = remember(currentDate) {
-                                if (currentDate == viewModel.today) "Today's Fuel"
-                                else currentDate.format(HEADER_DATE_FORMATTER)
+                    Column {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 48.dp, start = 24.dp, end = 24.dp, bottom = 16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                val dateText = remember(currentDate) {
+                                    if (currentDate == viewModel.today) "Today's Fuel"
+                                    else currentDate.format(HEADER_DATE_FORMATTER)
+                                }
+
+                                Text(
+                                    text = dateText,
+                                    style = MaterialTheme.typography.headlineLarge.copy(
+                                        fontWeight = FontWeight.ExtraBold, letterSpacing = (-1).sp
+                                    ),
+                                    color = MaterialTheme.colorScheme.onBackground
+                                )
                             }
 
-                            Text(
-                                text = dateText,
-                                style = MaterialTheme.typography.headlineLarge.copy(
-                                    fontWeight = FontWeight.ExtraBold, letterSpacing = (-1).sp
-                                ),
-                                color = MaterialTheme.colorScheme.onBackground
-                            )
-                        }
-
-                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Surface(
-                                shape = CircleShape,
-                                color = MaterialTheme.colorScheme.primaryContainer,
-                                modifier = Modifier.bouncyClick(onClick = {
-                                    modelSelection = true
-                                    })
-                            ) {
-
-                                DropdownMenu(
-                                    expanded = modelSelection,
-                                    onDismissRequest = {
-                                        modelSelection = false
-                                    }
+                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = MaterialTheme.colorScheme.primaryContainer,
+                                    modifier = Modifier.bouncyClick(onClick = onNavigateToSettings)
                                 ) {
-                                    models.forEach {
-                                        model->
-                                        DropdownMenuItem(
-                                            text = {
-                                                Text(model.displayName)
-                                            },
-                                            onClick = {
-//                                                if (models.isEmpty()) viewModel::loadAvailableModels
-                                                viewModel.selectModel(model)
-                                                Log.d("AI MODEL", "Model Name: ${selectedModel?.name}")
 
-                                                modelSelection = false
-                                            }
+
+                                    Box(Modifier.padding(12.dp)) {
+                                        Icon(
+                                            Icons.Rounded.Settings,
+                                            contentDescription = "Settings",
+                                            tint = MaterialTheme.colorScheme.onPrimaryContainer
                                         )
                                     }
                                 }
-                                Box(Modifier.padding(12.dp)) {
-                                    Icon(
-                                        Icons.Rounded.Api,
-                                        contentDescription = "API Key",
-                                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+
+//                                Surface(
+//                                    shape = CircleShape,
+//                                    color = MaterialTheme.colorScheme.primaryContainer,
+//                                    modifier = Modifier.bouncyClick(onClick = {
+//
+//                                        showApiDialog = true
+//                                    })
+//                                ) {
+//                                    Box(Modifier.padding(12.dp)) {
+//                                        Icon(
+//                                            Icons.Rounded.Key,
+//                                            contentDescription = "API Key",
+//                                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+//                                        )
+//                                    }
+//                                }
+
+                                Surface(
+                                    shape = CircleShape,
+                                    color = MaterialTheme.colorScheme.surfaceVariant,
+                                    modifier = Modifier.bouncyClick(
+                                        onClick = { showDatePicker = true },
+                                        onLongPress = {
+                                            scope.launch {
+                                                pagerState.animateScrollToPage(startIndex)
+                                            }
+                                        })
+                                ) {
+                                    Box(Modifier.padding(12.dp)) {
+                                        Icon(
+                                            Icons.Default.DateRange,
+                                            contentDescription = "Calendar"
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        if (!hasApiKey) {
+                            Surface(
+                                shape = RoundedCornerShape(20.dp),
+                                color = MaterialTheme.colorScheme.errorContainer,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(start = 24.dp, end = 24.dp)
+                            ) {
+                            }
+                            Row(
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Key,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                                Spacer(Modifier.width(12.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "No Gemini API key",
+                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onErrorContainer
+                                    )
+                                    Text(
+                                        text = "Meal analysis is off until you add one.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onErrorContainer
                                     )
                                 }
-                            }
-
-                            Surface(
-                                shape = CircleShape,
-                                color = MaterialTheme.colorScheme.primaryContainer,
-                                modifier = Modifier.bouncyClick(onClick = {
-
-                                    showApiDialog = true })
-                            ) {
-                                Box(Modifier.padding(12.dp)) {
-                                    Icon(
-                                        Icons.Rounded.Key,
-                                        contentDescription = "API Key",
-                                        tint = MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
+                                TextButton(onClick = { showApiDialog = true }) {
+                                    Text("Add key")
                                 }
+
                             }
 
-                            Surface(
-                                shape = CircleShape,
-                                color = MaterialTheme.colorScheme.surfaceVariant,
-                                modifier = Modifier.bouncyClick(
-                                    onClick = { showDatePicker = true },
-                                    onLongPress = {
-                                        scope.launch {
-                                            pagerState.animateScrollToPage(startIndex)
-                                        }
-                                    })
-                            ) {
-                                Box(Modifier.padding(12.dp)) {
-                                    Icon(Icons.Default.DateRange, contentDescription = "Calendar")
-                                }
-                            }
+
                         }
                     }
                 }) { paddingValues ->
@@ -318,6 +345,7 @@ fun DashboardScreen(
                             onCardClick = { showDailyAnalytics = true },
                             totalCalories = pageState.totalCalories,
                             targetCalories = pageState.targetCalories,
+                            isBasalEstimated = pageState.isBasalEstimated,
                             showDailyAnalytics = showDailyAnalytics,
                             onQuantitySelected = { mealLog, newQty ->
                                 viewModel.updateMealQuantity(mealLog, newQty)

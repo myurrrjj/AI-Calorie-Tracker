@@ -1,7 +1,6 @@
 package com.myurrrjj.trackabite.ui.home.components
 
 import android.content.Intent
-import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -52,16 +51,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.core.net.toUri
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
 import com.myurrrjj.trackabite.health.HealthConnectManager
 import kotlinx.coroutines.launch
-import androidx.core.net.toUri
 
 @Composable
 fun EnergyBurnCard(
     activeCalories: Int,
     basalCalories: Int,
+    isBasalEstimated: Boolean,
     healthConnectManager: HealthConnectManager,
     onPermissionsGranted: () -> Unit,
     modifier: Modifier = Modifier
@@ -165,7 +165,8 @@ fun EnergyBurnCard(
                     if (hasPermissions) {
                         EnergyBurnBody(
                             activeCalories = activeCalories,
-                            basalCalories = basalCalories
+                            basalCalories = basalCalories,
+                            isBasalEstimated = isBasalEstimated
                         )
                     } else {
                         ActionState(
@@ -183,7 +184,7 @@ fun EnergyBurnCard(
 }
 
 @Composable
-private fun EnergyBurnBody(activeCalories: Int, basalCalories: Int) {
+private fun EnergyBurnBody(activeCalories: Int, basalCalories: Int,isBasalEstimated: Boolean) {
     val activeColor = MaterialTheme.colorScheme.tertiary
     val basalColor = MaterialTheme.colorScheme.primary
     val total = activeCalories + basalCalories
@@ -271,7 +272,7 @@ private fun EnergyBurnBody(activeCalories: Int, basalCalories: Int) {
             )
             LegendItem(
                 dotColor = basalColor,
-                label = "Basal (BMR)",
+                label = if (isBasalEstimated) "Basal (est.)" else "Basal (BMR)",
                 value = "$animatedBasal kcal",
                 alignEnd = true
             )
@@ -366,7 +367,7 @@ private fun BurnInfoDialog(onDismiss: () -> Unit) {
                 InfoItem(
                     dotColor = MaterialTheme.colorScheme.primary,
                     title = "Basal burn (BMR)",
-                    body = "The energy your body spends just staying alive: heartbeat, breathing, keeping warm. Usually the bigger slice — about 60–70% of your day."
+                    body = "The energy your body spends just staying alive: heartbeat, breathing, keeping warm. Usually the bigger slice — about 60–70% of your day — and it builds up hour by hour."
                 )
 
                 Spacer(Modifier.height(14.dp))
@@ -374,16 +375,17 @@ private fun BurnInfoDialog(onDismiss: () -> Unit) {
                 InfoItem(
                     dotColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f),
                     title = "Where the numbers come from",
-                    body = "Health Connect has no \"BMR\" value. Your watch or fitness app writes two numbers — total energy burned and active energy burned. TrackABite shows active as-is and works out basal as total − active."
+                    body = "Health Connect stores your basal metabolic rate — the energy you'd burn at rest across a whole day. TrackABite reads that rate and shows the slice you've burned so far today, so basal climbs from zero through the day instead of appearing all at once. Active burn is read as-is; if your device only reports total energy, basal is worked out as total − active."
                 )
 
                 Spacer(Modifier.height(14.dp))
 
                 InfoItem(
                     dotColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f),
-                    title = "No wearable?",
-                    body = "Then there's nothing to read yet. Connect Health Connect (Google Fit, Samsung Health, Fitbit…) and your numbers appear automatically."
+                    title = "No wearable? Your phone still counts",
+                    body = "Health Connect also reads the activity your phone already tracks — the steps and movement your phone logs count as active burn, so you don't need a watch to see numbers. Install the Health Connect app and connect anything else you use (Google Fit, Samsung Health, Fitbit…), and your day fills in further: the more it can read, the more complete your burn looks."
                 )
+
 
                 Spacer(Modifier.height(22.dp))
 

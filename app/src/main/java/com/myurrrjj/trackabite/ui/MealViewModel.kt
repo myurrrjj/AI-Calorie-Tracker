@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -57,6 +58,14 @@ class MealViewModel(
 
     val selectedModel: StateFlow<GeminiModelOption?> =
         _selectedModel.asStateFlow()
+
+    val hasApiKey: StateFlow<Boolean> = preferencesRepository.apiKey
+        .map { !it.isNullOrBlank() }
+        .stateIn(
+            viewModelScope,
+            SharingStarted.Eagerly,
+            !preferencesRepository.getApiKey().isNullOrBlank()
+        )
 
     private val _errorMessage = MutableStateFlow<String?>(null)
     private val _pendingMeals = MutableStateFlow<List<MealLog>>(emptyList())
@@ -147,6 +156,7 @@ class MealViewModel(
                     totalCalories = currentTotalCalories,
                     activeCalories = energyBurn.activeCalories,
                     basalCalories = energyBurn.basalCalories,
+                    isBasalEstimated = energyBurn.isEstimated,
                     isLoading = relevantPending.isNotEmpty(),
                     errorMessage = error,
                     currentDate = date,
