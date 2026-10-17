@@ -52,6 +52,10 @@ android {
     }
 
     buildTypes {
+        debug{
+            applicationIdSuffix += ".debug"
+//            suffix += ".debug"
+        }
         release {
             isDebuggable = false
 //            isMinifyEnabled = true

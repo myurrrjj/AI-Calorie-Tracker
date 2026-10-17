@@ -2,6 +2,7 @@ package com.myurrrjj.trackabite.repository
 
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
+import androidx.health.connect.client.records.BasalMetabolicRateRecord
 import androidx.health.connect.client.records.TotalCaloriesBurnedRecord
 import androidx.health.connect.client.request.AggregateRequest
 import androidx.health.connect.client.time.TimeRangeFilter
@@ -11,8 +12,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 
 data class EnergyBurn(
-    val activeCalories: Int = 0,
-    val basalCalories: Int = 0
+    val activeCalories: Int = 0, val basalCalories: Int = 0
 ) {
     val totalCalories: Int get() = activeCalories + basalCalories
 }
@@ -33,16 +33,26 @@ class DefaultHealthRepository(
                 val request = AggregateRequest(
                     metrics = setOf(
                         TotalCaloriesBurnedRecord.ENERGY_TOTAL,
-                        ActiveCaloriesBurnedRecord.ACTIVE_CALORIES_TOTAL
-                    ),
-                    timeRangeFilter = TimeRangeFilter.between(startOfDay, endOfDay)
+                        ActiveCaloriesBurnedRecord.ACTIVE_CALORIES_TOTAL,
+
+                        BasalMetabolicRateRecord.BASAL_CALORIES_TOTAL
+                    ), timeRangeFilter = TimeRangeFilter.between(startOfDay, endOfDay)
                 )
                 val response = client.aggregate(request)
-                val total = response[TotalCaloriesBurnedRecord.ENERGY_TOTAL]?.inKilocalories?.toInt() ?: 0
-                val active = response[ActiveCaloriesBurnedRecord.ACTIVE_CALORIES_TOTAL]?.inKilocalories?.toInt() ?: 0
+                val total =
+                    response[TotalCaloriesBurnedRecord.ENERGY_TOTAL]?.inKilocalories?.toInt() ?: 0
+                val active =
+                    response[ActiveCaloriesBurnedRecord.ACTIVE_CALORIES_TOTAL]?.inKilocalories?.toInt()
+                        ?: 0
+                val basal =
+                    response[BasalMetabolicRateRecord.BASAL_CALORIES_TOTAL]?.inKilocalories?.toInt()
+                        ?: 0
+
                 EnergyBurn(
                     activeCalories = active,
-                    basalCalories = (total - active).coerceAtLeast(0)
+                    basalCalories = if (basal != 0) basal.coerceAtLeast(0) else if (total > active) (total - active).coerceAtLeast(
+                        0
+                    ) else 0 //placeholder for manual calculation from weight and height
                 )
             } catch (e: Exception) {
                 EnergyBurn()

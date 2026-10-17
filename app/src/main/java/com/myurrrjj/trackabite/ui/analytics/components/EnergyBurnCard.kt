@@ -1,7 +1,6 @@
 package com.myurrrjj.trackabite.ui.home.components
 
 import android.content.Intent
-import android.health.connect.HealthConnectManager
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.animation.core.Animatable
@@ -57,6 +56,7 @@ import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
 import com.myurrrjj.trackabite.health.HealthConnectManager
 import kotlinx.coroutines.launch
+import androidx.core.net.toUri
 
 @Composable
 fun EnergyBurnCard(
@@ -154,7 +154,7 @@ fun EnergyBurnCard(
                             context.startActivity(
                                 Intent(
                                     Intent.ACTION_VIEW,
-                                    Uri.parse("market://details?id=com.google.android.apps.healthdata")
+                                    "market://details?id=com.google.android.apps.healthdata".toUri()
                                 )
                             )
                         }

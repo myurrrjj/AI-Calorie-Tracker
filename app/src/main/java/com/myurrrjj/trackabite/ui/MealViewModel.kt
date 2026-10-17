@@ -23,6 +23,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -45,7 +47,9 @@ class MealViewModel(
 ) : ViewModel() {
     private val _refreshHealthData = MutableStateFlow(System.currentTimeMillis())
     private val dayFlowCache = mutableMapOf<LocalDate, Flow<MealUiState>>()
-   private val _availableModels = MutableStateFlow<List<GeminiModelOption>>(emptyList())
+//    private val dayFlowCache = object : LruCache<LocalDate, Flow<MealUiState>>(7) {}
+
+    private val _availableModels = MutableStateFlow<List<GeminiModelOption>>(emptyList())
     val availableModels : StateFlow<List<GeminiModelOption>> = _availableModels.asStateFlow()
 
     private val _selectedModel =
@@ -77,24 +81,45 @@ class MealViewModel(
 
 
     init {
-        loadAvailableModels()
+        preferencesRepository.apiKey
+            .onEach { key ->
+                if (!key.isNullOrBlank()) {
+                    loadAvailableModels()
+                }
+            }
+            .launchIn(viewModelScope)
     }
+
 
     fun loadAvailableModels() {
         viewModelScope.launch {
             repository.getAvailableModels()
                 .onSuccess { models ->
+                    _errorMessage.value = null
                     _availableModels.value = models
-
-                    if (_selectedModel.value == null) {
-                        _selectedModel.value = models.firstOrNull()
+                    val current = _selectedModel.value
+                    _selectedModel.value = when {
+                        current == null -> pickDefaultModel(models)
+                        models.none { it.name == current.name } -> pickDefaultModel(models)
+                        else -> current
                     }
+
                 }
                 .onFailure { exception ->
-                    _errorMessage.value =
-                        exception.localizedMessage ?: "Failed to load AI models"
+                    _errorMessage.value = exception.localizedMessage ?: "Failed to load AI models"
                 }
         }
+    }
+
+
+    private fun pickDefaultModel(models: List<GeminiModelOption>): GeminiModelOption? {
+        val preferred = listOf("gemini-3.6-flash", "gemini-3.5-flash-lite")
+        preferred.forEach { wanted ->
+            models.firstOrNull { it.name.equals(wanted, ignoreCase = true) }?.let { return it }
+        }
+        models.firstOrNull { it.name.contains("flash-lite") }?.let { return it }
+        models.firstOrNull { it.name.contains("flash") && !it.name.contains("pro") }?.let { return it }
+        return models.firstOrNull()
     }
 
     fun selectModel(model: GeminiModelOption) {

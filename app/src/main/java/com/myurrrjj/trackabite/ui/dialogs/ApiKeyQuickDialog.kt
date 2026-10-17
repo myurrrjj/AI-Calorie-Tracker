@@ -35,13 +35,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import kotlin.coroutines.EmptyCoroutineContext.get
 
 @Composable
 fun ApiKeyQuickDialog(
     initialKey: String, onDismiss: () -> Unit, onSave: (String) -> Unit, onHelpClick: () -> Unit
 ) {
     var keyInput by remember { mutableStateOf(initialKey) }
-    val isKeyValid = keyInput.startsWith("AIza") && keyInput.length > 30
+
+    val isKeyValid = keyInput.trim().let {
+        it.length in 20..400 &&
+                it.none { c -> c.isWhitespace() } &&
+                (it.startsWith("AIza") || it.startsWith("AQ."))
+    }
+
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
