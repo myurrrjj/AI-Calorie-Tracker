@@ -15,6 +15,16 @@ interface MealDao {
 
     @Delete
     suspend fun deleteMeal(meal: MealLog)
+
+    @Query("""
+    SELECT
+        (SELECT COUNT(*) FROM meal_logs WHERE imagePath = :imagePath) +
+        (SELECT COUNT(*) FROM savedMeals WHERE imagePath = :imagePath)
+""")
+    suspend fun getImageReferenceCount(imagePath: String): Int
+
+//    @Query("SELECT EXISTS(SELECT 1 FROM meal_logs WHERE id = :mealId)")
+//    suspend fun mealLogExists(mealId: Int): Boolean
     @Update
     suspend fun updateMeal(meal: MealLog)
 
@@ -46,5 +56,8 @@ interface SavedMealDao {
 
     @Query("SELECT * FROM savedMeals ORDER BY frequency DESC")
     fun getAllSavedMeals(): Flow<List<SavedMeal>>
+
+//    @Query("SELECT EXISTS(SELECT 1 FROM savedMeals WHERE id = :savedMealId)")
+//    suspend fun savedMealExists(savedMealId: Int): Boolean
 
 }

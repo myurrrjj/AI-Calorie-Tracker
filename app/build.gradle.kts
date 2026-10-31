@@ -59,10 +59,12 @@ android {
 
         }
         create("benchmark") {
+            applicationIdSuffix = ".benchmark.test"
             initWith(buildTypes.getByName("release"))
             matchingFallbacks += listOf("release")
         }
         release {
+            applicationIdSuffix = ".tempRelease"
             isDebuggable = false
             isMinifyEnabled = true
             isShrinkResources = true
@@ -108,7 +110,7 @@ dependencies {
     implementation("androidx.room:room-ktx:$room_version")
     ksp("androidx.room:room-compiler:2.6.1")
     implementation("androidx.health.connect:connect-client:1.1.0")
-
+    implementation("androidx.exifinterface:exifinterface:1.4.2")
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)

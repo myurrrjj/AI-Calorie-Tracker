@@ -3,6 +3,8 @@ package com.myurrrjj.trackabite.network
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Log
+import java.io.File
+import java.io.IOException
 import com.myurrrjj.trackabite.local.MacroNutrients
 import com.myurrrjj.trackabite.local.MealLog
 import com.myurrrjj.trackabite.local.MicroNutrients
@@ -17,7 +19,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
+import kotlin.coroutines.cancellation.CancellationException
 
+
+private const val MAX_INLINE_IMAGE_BYTES = 64L * 1024L * 1024L
 class AiService {
 
 
@@ -26,6 +31,33 @@ class AiService {
     private val config = GenerateContentConfig.builder().temperature(0.2f).topK(32f).topP(0.95f)
 //        .tools(listOf(searchTool))
         .build()
+
+    private fun loadJpegBytes(localPath: String): ByteArray {
+        val file = File(localPath)
+
+        if (!file.isFile || !file.canRead()) {
+            throw IOException("AI image file is missing or unreadable.")
+        }
+
+        if (file.length() < 4L) {
+            throw IOException("AI image file is empty or invalid.")
+        }
+        if (file.length() > MAX_INLINE_IMAGE_BYTES) {
+            throw IOException("AI image exceeds the supported inline image size.")
+        }
+
+        val bytes = file.readBytes()
+
+        if (
+            bytes.size < 4 ||
+            bytes[0] != 0xFF.toByte() ||
+            bytes[1] != 0xD8.toByte()
+        ) {
+            throw IOException("AI image is not a valid JPEG file.")
+        }
+
+        return bytes
+    }
 
     suspend fun analyseMeal(
         apiKey: String, localPath: String?, userText: String, modelName: String
@@ -82,18 +114,20 @@ vitaminD = mcg
             val contentBuilder = Content.builder().role("user")
 
             if (localPath != null) {
-                val bitmap = BitmapFactory.decodeFile(localPath)
-                val stream = ByteArrayOutputStream()
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 80, stream)
-                val byteArray = stream.toByteArray()
+                val imageBytes = loadJpegBytes(localPath)
 
-                contentBuilder.parts(
-                    listOf(
-                        Part.builder().inlineData(
-                            Blob.builder().data(byteArray).mimeType("image/jpeg").build()
-                        ).build(), Part.builder().text(prompt).build()
-                    )
-                )
+                val imagePart = Part.builder().inlineData(
+                    Blob.builder()
+                        .data(imageBytes)
+                        .mimeType("image/jpeg")
+                        .build()
+                ).build()
+
+                val textPart = Part.builder()
+                    .text(prompt)
+                    .build()
+
+                contentBuilder.parts(listOf(imagePart, textPart))
             } else {
                 contentBuilder.parts(listOf(Part.builder().text(prompt).build()))
             }
@@ -109,6 +143,8 @@ vitaminD = mcg
 
             val resultMeal = parseJsonToMealLog(cleanedJsonString, userText)
             Result.success(resultMeal)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure(e)
         }
