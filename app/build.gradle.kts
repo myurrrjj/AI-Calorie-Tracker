@@ -29,7 +29,7 @@ android {
         applicationId = "com.myurrrjj.trackabite"
         minSdk = 26
         targetSdk = 37
-        versionCode = 3
+        versionCode = 4
         versionName = "1.0"
 
         val localProperties = Properties()
@@ -53,13 +53,13 @@ android {
 
     buildTypes {
         debug{
-            applicationIdSuffix += ".debug"
+            applicationIdSuffix = ".debug"
 //            suffix += ".debug"
         }
         release {
             isDebuggable = false
-//            isMinifyEnabled = true
-//            isShrinkResources = true
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

@@ -118,7 +118,7 @@ fun SavedMealsBottomSheet(
 
                                 Column(Modifier.weight(1f)) {
                                     Text(
-                                        text = savedMeal.userRequest,
+                                        text = savedMeal.shortName,
                                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                                         color = MaterialTheme.colorScheme.onSurface,
                                         maxLines = 1,

@@ -66,6 +66,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.myurrrjj.trackabite.repository.UserPreferencesRepository
 import com.myurrrjj.trackabite.ui.Utils.bouncyClick
 import kotlinx.coroutines.delay
+import androidx.core.net.toUri
 
 class ApiKeyViewModel(private val userPreferencesRepository: UserPreferencesRepository) : ViewModel() {
     var apiKeyInput by mutableStateOf("")
@@ -213,7 +214,8 @@ fun ApiKeySetupScreen(
                                 icon = Icons.Rounded.OpenInNew,
                                 actionText = "Open AI Studio",
                                 onAction = {
-                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://aistudio.google.com/app/apikey"))
+                                    val intent = Intent(Intent.ACTION_VIEW,
+                                        "https://aistudio.google.com/app/apikey".toUri())
                                     context.startActivity(intent)
                                 }
                             )
