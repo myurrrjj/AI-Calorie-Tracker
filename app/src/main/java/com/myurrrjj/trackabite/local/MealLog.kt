@@ -1,6 +1,6 @@
 package com.myurrrjj.trackabite.local
 
-import androidx.room.ColumnInfo
+import androidx.compose.runtime.Stable
 import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.Ignore
@@ -13,20 +13,21 @@ data class MealLog(
     val id: Int = 0,
     val timeStamp: Long = System.currentTimeMillis(),
     val userRequest: String,
-    val shortName:String,
+    val shortName: String,
     val aiResponse: String,
     val imagePath: String? = null,
-    val quantity:Float = 1f,
+    val quantity: Float = 1f,
 
     @Embedded
     val macros: MacroNutrients,
 
     @Embedded
-    val micros: MicroNutrients
+    val micros: MicroNutrients,
+
 ) {
+
     @Ignore
     var isAnalysing: Boolean = false
-
     val effectiveCalories: Int get() = (macros.calories * quantity).roundToInt()
     val effectiveProtein: Int get() = (macros.protein * quantity).roundToInt()
     val effectiveCarbs: Int get() = (macros.carbs * quantity).roundToInt()
@@ -55,6 +56,7 @@ fun SavedMeal.toMealLog() = MealLog(
     quantity = this.quantity
 )
 
+@Stable
 @Entity(tableName = "savedMeals")
 data class SavedMeal(
     @PrimaryKey(autoGenerate = true)
@@ -62,17 +64,18 @@ data class SavedMeal(
     val userRequest: String,
 
 //    @ColumnInfo(defaultValue = "")
-    val shortName:String,
+    val shortName: String,
     val aiResponse: String,
     val imagePath: String? = null,
-    val frequency : Int = 0,
+    val frequency: Int = 0,
     val quantity: Float = 1f,
 
     @Embedded
     val macros: MacroNutrients,
 
     @Embedded
-    val micros: MicroNutrients
+    val micros: MicroNutrients,
+
 ) {
     @Ignore
     var isAnalysing: Boolean = false

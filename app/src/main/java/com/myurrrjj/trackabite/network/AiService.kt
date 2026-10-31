@@ -77,7 +77,7 @@ vitaminD = mcg
 """.trimIndent()
 
 
-            Log.d("Ai response", "")
+//            Log.d("Ai response", "")
 
             val contentBuilder = Content.builder().role("user")
 

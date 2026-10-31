@@ -16,9 +16,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -34,10 +36,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.health.connect.client.units.celsius
 import kotlinx.coroutines.delay
 import java.text.NumberFormat
@@ -50,8 +55,9 @@ fun AnimatedMacroChart(
     data: List<DailyAggregateData>,
     selectedMacro: MacroType,
     targetValue: Float,
-    modifier: Modifier = Modifier            // BUG 1 FIX: actually applied below now
+    modifier: Modifier = Modifier
 ) {
+    val haptic = LocalHapticFeedback.current
     val yValues = remember(data, selectedMacro) {
         data.map {
             when (selectedMacro) {
@@ -191,7 +197,9 @@ fun AnimatedMacroChart(
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication        = null
-                        ) { selectedIndex = if (selectedIndex == i) null else i }
+                        ) {
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            selectedIndex = if (selectedIndex == i) null else i }
                 )
             }
         }
@@ -316,7 +324,11 @@ fun AnimatedMacroChart(
                             Box(
                                 modifier = Modifier
                                     .fillMaxHeight(barFrac)
+
                                     .wrapContentHeight(Alignment.Top)
+                                    .wrapContentWidth(unbounded = true)
+                                    .zIndex(10f)
+                                    .offset(y=(-8).dp)
                                     .background(Color(0xFF1E1E1E), RoundedCornerShape(8.dp))
                                     .padding(horizontal = 12.dp, vertical = 8.dp)
                             ) {

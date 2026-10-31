@@ -198,7 +198,7 @@ class MealViewModel(
             macros = MacroNutrients(),
             micros = MicroNutrients(),
             imagePath = imageUri?.toString(),
-            quantity = 1f
+            quantity = 1f,
         ).apply { isAnalysing = true }
 
         _pendingMeals.value = listOf(optimisticMeal) + _pendingMeals.value

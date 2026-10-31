@@ -21,4 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "TrackABite"
 include(":app")
- 
+include(":benchmark")

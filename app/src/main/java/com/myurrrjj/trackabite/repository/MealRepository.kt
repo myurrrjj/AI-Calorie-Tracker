@@ -93,7 +93,7 @@ class OfflineMealRepository(
 //                val modelList = getAvailableModels()
 //                val modelName = modelList.getOrNull()?.firstOrNull()?.name ?: "gemini-3.5-flash"
 
-                Log.d("AI MODEL", "Model Name: $modelName")
+//                Log.d("AI MODEL", "Model Name: $modelName")
                 val result = aiService.analyseMeal(apiKey, finalLocalPath, userText, modelName)
                 result.map { mealLog ->
                     val nowTime = LocalTime.now()

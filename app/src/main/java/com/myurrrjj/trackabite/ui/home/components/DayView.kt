@@ -24,6 +24,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -127,6 +130,11 @@ fun DayView(
                 }
             } else {
                 items(items = meals, key = { it.id }) { meal ->
+
+                     val currentOnLongClick by rememberUpdatedState(onMealLongClick)
+    val currentOnDelete by rememberUpdatedState(onDelete)
+    val currentOnQuantity by rememberUpdatedState(onQuantitySelected)
+
                     AnimatedVisibility(
                         visible = meal != activeMealId,
                         enter = fadeIn() + scaleIn(),
@@ -144,9 +152,9 @@ fun DayView(
                             )
                         ) {
                             MealItemCard2(
-                                onLongClick = { onMealLongClick(meal) },
+                                onLongClick = remember(meal.id) { { currentOnLongClick(meal) } },
+                                onDelete = remember(meal.id) { { currentOnDelete(meal) } },
                                 meal = meal,
-                                onDelete = { onDelete(meal) },
                                 modifier = Modifier
                                     .wrapContentWidth()
                                     .sharedBounds(
@@ -156,10 +164,9 @@ fun DayView(
                                     ),
                                 sharedTransitionScope = sharedTransitionScope,
                                 animatedVisibilityScope = this@AnimatedVisibility,
-                                onQuantitySelect = { mealLog, newQty ->
-                                    onQuantitySelected(mealLog, newQty)
-                                }
-                            )
+                                onQuantitySelect = remember(meal.id) { { m, q -> currentOnQuantity(m, q) } },
+
+                                )
                         }
                     }
                 }

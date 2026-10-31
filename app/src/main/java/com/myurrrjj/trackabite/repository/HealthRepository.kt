@@ -74,7 +74,7 @@ class DefaultHealthRepository(
                     isEstimated = hcBasal == 0 && manualBasal > 0
                 )
             } catch (e: Exception) {
-                Log.e("HealthRepository", "Energy burn aggregate failed", e)
+//                Log.e("HealthRepository", "Energy burn aggregate failed", e)
                 manualOnly
             }
         }

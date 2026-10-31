@@ -54,7 +54,13 @@ android {
     buildTypes {
         debug{
             applicationIdSuffix = ".debug"
-//            suffix += ".debug"
+            buildConfigField("boolean", "DEBUG_MODE", "true")
+            isMinifyEnabled = false
+
+        }
+        create("benchmark") {
+            initWith(buildTypes.getByName("release"))
+            matchingFallbacks += listOf("release")
         }
         release {
             isDebuggable = false
@@ -64,7 +70,8 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("release")
+            buildConfigField("boolean", "DEBUG_MODE","false")
+            signingConfig = signingConfigs.getByName("debug")
         }
 
     }
@@ -114,4 +121,5 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+    debugImplementation(libs.leakcanary.android)
 }
