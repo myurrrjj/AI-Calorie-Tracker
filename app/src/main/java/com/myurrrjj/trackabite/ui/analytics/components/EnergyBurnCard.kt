@@ -5,21 +5,26 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -29,6 +34,7 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.rounded.LocalFireDepartment
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -44,6 +50,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -55,7 +62,9 @@ import androidx.core.net.toUri
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
 import com.myurrrjj.trackabite.health.HealthConnectManager
+import com.myurrrjj.trackabite.ui.Utils.bouncyClick
 import kotlinx.coroutines.launch
+
 
 @Composable
 fun EnergyBurnCard(
@@ -68,20 +77,19 @@ fun EnergyBurnCard(
 ) {
     val context = LocalContext.current
     val availabilityStatus = healthConnectManager.availabilityStatus
+
     var hasPermissions by remember { mutableStateOf(false) }
     var showInfo by remember { mutableStateOf(false) }
 
     LaunchedEffect(availabilityStatus) {
         if (availabilityStatus == HealthConnectClient.SDK_AVAILABLE) {
             hasPermissions = healthConnectManager.hasPermissions()
-            if (hasPermissions) {
-                onPermissionsGranted()
-            }
+            if (hasPermissions) onPermissionsGranted()
         }
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(
-        contract = PermissionController.createRequestPermissionResultContract()
+        PermissionController.createRequestPermissionResultContract()
     ) { grantedPermissions ->
         if (grantedPermissions.containsAll(healthConnectManager.requiredPermissions)) {
             hasPermissions = true
@@ -94,88 +102,80 @@ fun EnergyBurnCard(
     }
 
     Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(32.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = 200.dp),
+        shape = RoundedCornerShape(28.dp),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
-        tonalElevation = 6.dp
+        tonalElevation = 2.dp
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp)
+                .padding(14.dp)
+                .heightIn(min = 182.dp),
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.16f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.LocalFireDepartment,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.tertiary,
-                        modifier = Modifier.size(19.dp)
-                    )
-                }
-                Spacer(Modifier.width(10.dp))
                 Text(
-                    text = "Energy burned",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f)
+                    text = "ENERGY BURNED",
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 0.5.sp
+                    ),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1
                 )
+
                 IconButton(onClick = { showInfo = true }) {
                     Icon(
                         imageVector = Icons.Outlined.Info,
-                        contentDescription = "What is active vs basal burn?",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        contentDescription = "Information about energy burned",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(19.dp)
                     )
                 }
             }
 
-            Spacer(Modifier.height(10.dp))
-
             when (availabilityStatus) {
                 HealthConnectClient.SDK_UNAVAILABLE -> {
-                    MessageState(text = "Health Connect is unavailable on this device")
+                    MessageState("Health Connect is unavailable on this device")
                 }
 
                 HealthConnectClient.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED -> {
                     ActionState(
-                        title = "Health Connect app is missing",
-                        actionLabel = "Install",
-                        onAction = {
-                            context.startActivity(
-                                Intent(
-                                    Intent.ACTION_VIEW,
-                                    "market://details?id=com.google.android.apps.healthdata".toUri()
-                                )
+                        "Health Connect app is missing",
+                        "Install"
+                    ) {
+                        context.startActivity(
+                            Intent(
+                                Intent.ACTION_VIEW,
+                                "market://details?id=com.google.android.apps.healthdata".toUri()
                             )
-                        }
-                    )
+                        )
+                    }
                 }
 
                 HealthConnectClient.SDK_AVAILABLE -> {
                     if (hasPermissions) {
-                        EnergyBurnBody(
+                        EnergyBurnSummary(
                             activeCalories = activeCalories,
                             basalCalories = basalCalories,
                             isBasalEstimated = isBasalEstimated
                         )
                     } else {
                         ActionState(
-                            title = "Connect Health Connect to see your burn",
-                            actionLabel = "Grant permission",
-                            onAction = {
-                                permissionLauncher.launch(healthConnectManager.requiredPermissions)
-                            }
-                        )
+                            "Connect Health Connect to see your burn",
+                            "Grant permission"
+                        ) {
+                            permissionLauncher.launch(
+                                healthConnectManager.requiredPermissions
+                            )
+                        }
                     }
                 }
             }
@@ -184,7 +184,148 @@ fun EnergyBurnCard(
 }
 
 @Composable
-private fun EnergyBurnBody(activeCalories: Int, basalCalories: Int,isBasalEstimated: Boolean) {
+private fun EnergyBurnSummary(
+    activeCalories: Int,
+    basalCalories: Int,
+    isBasalEstimated: Boolean
+) {
+    val activeColor = MaterialTheme.colorScheme.tertiary
+    val basalColor = MaterialTheme.colorScheme.primary
+
+    val safeActive = activeCalories.coerceAtLeast(0)
+    val safeBasal = basalCalories.coerceAtLeast(0)
+    val total = safeActive + safeBasal
+
+    val animatedTotal by animateIntAsState(
+        targetValue = total,
+        animationSpec = spring(stiffness = Spring.StiffnessLow)
+    )
+
+    val animatedActive by animateIntAsState(
+        targetValue = safeActive,
+        animationSpec = spring(stiffness = Spring.StiffnessLow)
+    )
+
+    val animatedBasal by animateIntAsState(
+        targetValue = safeBasal,
+        animationSpec = spring(stiffness = Spring.StiffnessLow)
+    )
+
+    val activeFraction = if (total > 0) {
+        safeActive.toFloat() / total
+    } else {
+        0f
+    }
+
+    val animatedActiveFraction by animateFloatAsState(
+        targetValue = activeFraction,
+        animationSpec = spring(stiffness = Spring.StiffnessLow)
+    )
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.Bottom
+        ) {
+            Text(
+                text = "$animatedTotal",
+                style = MaterialTheme.typography.headlineMedium.copy(
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = (-1).sp
+                ),
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1
+            )
+
+            Spacer(Modifier.width(6.dp))
+
+            Text(
+                text = "kcal burned",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 4.dp)
+            )
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(8.dp)
+                .clip(CircleShape)
+                .background(
+                    if (total > 0) basalColor
+                    else MaterialTheme.colorScheme.surfaceVariant
+                )
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth(animatedActiveFraction.coerceIn(0f, 1f))
+                    .background(activeColor)
+            )
+        }
+
+        Column(
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            EnergyBreakdownRow(
+                label = "Active",
+                value = animatedActive,
+                color = activeColor
+            )
+
+            EnergyBreakdownRow(
+                label = if (isBasalEstimated) "Basal · est." else "Basal · BMR",
+                value = animatedBasal,
+                color = basalColor
+            )
+        }
+    }
+}
+
+@Composable
+private fun EnergyBreakdownRow(
+    label: String,
+    value: Int,
+    color: Color
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(7.dp)
+                .clip(CircleShape)
+                .background(color)
+        )
+
+        Spacer(Modifier.width(7.dp))
+
+        Text(
+            text = label,
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1
+        )
+
+        Text(
+            text = "$value kcal",
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontWeight = FontWeight.Bold
+            ),
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1
+        )
+    }
+}
+
+
+@Composable
+private fun EnergyBurnBody(activeCalories: Int, basalCalories: Int, isBasalEstimated: Boolean) {
     val activeColor = MaterialTheme.colorScheme.tertiary
     val basalColor = MaterialTheme.colorScheme.primary
     val total = activeCalories + basalCalories
@@ -197,18 +338,15 @@ private fun EnergyBurnBody(activeCalories: Int, basalCalories: Int,isBasalEstima
 
     val animatedTotal by animateIntAsState(
         targetValue = total,
-        animationSpec = spring(stiffness = Spring.StiffnessLow),
-        label = "energyTotal"
+        animationSpec = spring(stiffness = Spring.StiffnessLow)
     )
     val animatedActive by animateIntAsState(
         targetValue = activeCalories,
-        animationSpec = spring(stiffness = Spring.StiffnessLow),
-        label = "energyActive"
+        animationSpec = spring(stiffness = Spring.StiffnessLow)
     )
     val animatedBasal by animateIntAsState(
         targetValue = basalCalories,
-        animationSpec = spring(stiffness = Spring.StiffnessLow),
-        label = "energyBasal"
+        animationSpec = spring(stiffness = Spring.StiffnessLow)
     )
 
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -261,15 +399,8 @@ private fun EnergyBurnBody(activeCalories: Int, basalCalories: Int,isBasalEstima
 
         Spacer(Modifier.height(14.dp))
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            LegendItem(
-                dotColor = activeColor,
-                label = "Active",
-                value = "$animatedActive kcal"
-            )
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            LegendItem(dotColor = activeColor, label = "Active", value = "$animatedActive kcal")
             LegendItem(
                 dotColor = basalColor,
                 label = if (isBasalEstimated) "Basal (est.)" else "Basal (BMR)",
@@ -281,12 +412,7 @@ private fun EnergyBurnBody(activeCalories: Int, basalCalories: Int,isBasalEstima
 }
 
 @Composable
-private fun LegendItem(
-    dotColor: Color,
-    label: String,
-    value: String,
-    alignEnd: Boolean = false
-) {
+private fun LegendItem(dotColor: Color, label: String, value: String, alignEnd: Boolean = false) {
     Column(horizontalAlignment = if (alignEnd) Alignment.End else Alignment.Start) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
@@ -319,8 +445,8 @@ private fun BurnInfoDialog(onDismiss: () -> Unit) {
     LaunchedEffect(Unit) {
         launch {
             scale.animateTo(
-                targetValue = 1f,
-                animationSpec = spring(
+                1f,
+                spring(
                     dampingRatio = Spring.DampingRatioMediumBouncy,
                     stiffness = Spring.StiffnessMedium
                 )
@@ -337,9 +463,7 @@ private fun BurnInfoDialog(onDismiss: () -> Unit) {
             modifier = Modifier
                 .fillMaxWidth()
                 .graphicsLayer {
-                    scaleX = scale.value
-                    scaleY = scale.value
-                    this.alpha = alpha.value
+                    scaleX = scale.value; scaleY = scale.value; this.alpha = alpha.value
                 }
         ) {
             Column(
@@ -353,42 +477,19 @@ private fun BurnInfoDialog(onDismiss: () -> Unit) {
                     fontWeight = FontWeight.Black,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-
                 Spacer(Modifier.height(18.dp))
-
                 InfoItem(
                     dotColor = MaterialTheme.colorScheme.tertiary,
                     title = "Active burn",
-                    body = "The energy you spend moving — walking, workouts, even fidgeting."
+                    body = "The energy you spend moving."
                 )
-
                 Spacer(Modifier.height(14.dp))
-
                 InfoItem(
                     dotColor = MaterialTheme.colorScheme.primary,
                     title = "Basal burn (BMR)",
-                    body = "The energy your body spends just staying alive: heartbeat, breathing, keeping warm. Usually the bigger slice — about 60–70% of your day — and it builds up hour by hour."
+                    body = "The energy your body spends just staying alive."
                 )
-
-                Spacer(Modifier.height(14.dp))
-
-                InfoItem(
-                    dotColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f),
-                    title = "Where the numbers come from",
-                    body = "Health Connect stores your basal metabolic rate — the energy you'd burn at rest across a whole day. TrackABite reads that rate and shows the slice you've burned so far today, so basal climbs from zero through the day instead of appearing all at once. Active burn is read as-is; if your device only reports total energy, basal is worked out as total − active."
-                )
-
-                Spacer(Modifier.height(14.dp))
-
-                InfoItem(
-                    dotColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f),
-                    title = "No wearable? Your phone still counts",
-                    body = "Health Connect also reads the activity your phone already tracks — the steps and movement your phone logs count as active burn, so you don't need a watch to see numbers. Install the Health Connect app and connect anything else you use (Google Fit, Samsung Health, Fitbit…), and your day fills in further: the more it can read, the more complete your burn looks."
-                )
-
-
                 Spacer(Modifier.height(22.dp))
-
                 Button(
                     onClick = onDismiss,
                     modifier = Modifier
@@ -437,12 +538,12 @@ private fun MessageState(text: String) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(110.dp),
+            .height(140.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = text,
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
         )
@@ -450,34 +551,30 @@ private fun MessageState(text: String) {
 }
 
 @Composable
-private fun ActionState(
-    title: String,
-    actionLabel: String,
-    onAction: () -> Unit
-) {
+private fun ActionState(title: String, actionLabel: String, onAction: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .height(150.dp),
+            .height(140.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Text(
             text = title,
-            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center
         )
-        Spacer(Modifier.height(14.dp))
+        Spacer(Modifier.height(8.dp))
         Button(
             onClick = onAction,
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.tertiary,
                 contentColor = MaterialTheme.colorScheme.onTertiary
             )
         ) {
-            Text(actionLabel)
+            Text(actionLabel, fontSize = 12.sp)
         }
     }
 }

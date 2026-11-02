@@ -3,10 +3,16 @@ package com.myurrrjj.trackabite.ui.home
 import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,11 +21,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.rounded.Key
@@ -89,7 +97,7 @@ fun DashboardScreen(
     var showDailyAnalytics by remember { mutableStateOf(false) }
     var showApiDialog by remember { mutableStateOf(false) }
     var showSavedMealsSheet by remember { mutableStateOf(false) }
-
+    val streak by viewModel.currentStreak.collectAsStateWithLifecycle()
     var activeMeal by remember { mutableStateOf<MealLog?>(null) }
     BackHandler(enabled = activeMeal != null) {
         activeMeal = null
@@ -148,16 +156,24 @@ fun DashboardScreen(
                 }) { Text("OK") }
         }) { DatePicker(state = datePickerState) }
     }
-
+    val profile by appContainer.userPreferencesRepository.profile.collectAsStateWithLifecycle()
     var showTargetDialog by remember { mutableStateOf(false) }
     if (showTargetDialog) {
         EditTargetDialog(
-            currentTarget = currentUiState.targetCalories,
+
             onDismiss = { showTargetDialog = false },
-            onConfirm = { newTarget ->
-                viewModel.updateTargetCalories(newTarget)
+            onConfirm = { cal, pro, carb, fat, fib, sug ->
+                viewModel.updateAllTargets(cal, pro, carb, fat, fib, sug)
                 showTargetDialog = false
-            })
+            },
+            targetCalories = currentUiState.targetCalories,
+            targetCarbs = currentUiState.targetCarbs,
+            targetFat = currentUiState.targetFat,
+            targetFiber = currentUiState.targetFiber,
+            targetProtein = currentUiState.targetProtein,
+            targetSugar = currentUiState.targetSugar,
+            userProfile = profile
+        )
     }
 
     if (showApiDialog) {
@@ -208,30 +224,78 @@ fun DashboardScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Column(modifier = Modifier.weight(1f)) {
+                            Box(modifier = Modifier.weight(1f)) {
                                 val dateText = remember(currentDate) {
                                     if (currentDate == viewModel.today) "Today's Fuel"
                                     else currentDate.format(HEADER_DATE_FORMATTER)
                                 }
 
-                                Text(
-                                    text = dateText,
-                                    style = MaterialTheme.typography.headlineLarge.copy(
-                                        fontWeight = FontWeight.ExtraBold, letterSpacing = (-1).sp
-                                    ),
-                                    color = MaterialTheme.colorScheme.onBackground
-                                )
+                                AnimatedContent(
+                                    targetState = dateText, transitionSpec = {
+                                        (slideInVertically { it / 3 } + fadeIn()) togetherWith (slideOutVertically { -it / 3 } + fadeOut())
+                                    }, label = "date_header_animation"
+                                ) { animatedDate ->
+
+                                    Text(
+                                        text = animatedDate,
+                                        maxLines = 1,
+                                        autoSize = TextAutoSize.StepBased(
+                                            minFontSize = 20.sp,
+                                            maxFontSize = MaterialTheme.typography.headlineLarge.fontSize,
+                                            stepSize = 1.sp
+                                        ),
+                                        style = MaterialTheme.typography.headlineLarge.copy(
+                                            fontWeight = FontWeight.ExtraBold,
+                                            letterSpacing = (-1).sp
+                                        ),
+                                        color = MaterialTheme.colorScheme.onBackground
+                                    )
+                                }
                             }
+                            Spacer(Modifier.width(36.dp))
 
-                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
                                 Surface(
+                                    modifier = Modifier.size(48.dp),
                                     shape = CircleShape,
-                                    color = MaterialTheme.colorScheme.primaryContainer,
-                                    modifier = Modifier.bouncyClick(onClick = onNavigateToSettings)
+                                    color = MaterialTheme.colorScheme.tertiaryContainer
                                 ) {
+                                    Box(
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(2.dp)
+                                        ) {
+                                            Text("🔥", fontSize = 14.sp)
 
+                                            Text(
+                                                text = "$streak",
+                                                maxLines = 1,
+                                                style = MaterialTheme.typography.labelLarge.copy(
+                                                    fontWeight = FontWeight.Bold
+                                                ),
+                                                color = MaterialTheme.colorScheme.onTertiaryContainer
+                                            )
+                                        }
+                                    }
+                                }
 
-                                    Box(Modifier.padding(12.dp)) {
+                                Surface(
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .bouncyClick(onClick = onNavigateToSettings),
+                                    shape = CircleShape,
+                                    color = MaterialTheme.colorScheme.primaryContainer
+                                ) {
+                                    Box(
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
                                         Icon(
                                             Icons.Rounded.Settings,
                                             contentDescription = "Settings",
@@ -240,43 +304,31 @@ fun DashboardScreen(
                                     }
                                 }
 
-//                                Surface(
-//                                    shape = CircleShape,
-//                                    color = MaterialTheme.colorScheme.primaryContainer,
-//                                    modifier = Modifier.bouncyClick(onClick = {
-//
-//                                        showApiDialog = true
-//                                    })
-//                                ) {
-//                                    Box(Modifier.padding(12.dp)) {
-//                                        Icon(
-//                                            Icons.Rounded.Key,
-//                                            contentDescription = "API Key",
-//                                            tint = MaterialTheme.colorScheme.onPrimaryContainer
-//                                        )
-//                                    }
-//                                }
-
                                 Surface(
-                                    shape = CircleShape,
-                                    color = MaterialTheme.colorScheme.surfaceVariant,
-                                    modifier = Modifier.bouncyClick(
-                                        onClick = { showDatePicker = true },
-                                        onLongPress = {
-                                            scope.launch {
-                                                pagerState.animateScrollToPage(startIndex)
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .bouncyClick(
+                                            onClick = { showDatePicker = true },
+                                            onLongPress = {
+                                                scope.launch {
+                                                    pagerState.animateScrollToPage(startIndex)
+                                                }
                                             }
-                                        })
+                                        ),
+                                    shape = CircleShape,
+                                    color = MaterialTheme.colorScheme.surfaceVariant
                                 ) {
-                                    Box(Modifier.padding(12.dp)) {
+                                    Box(
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
                                         Icon(
                                             Icons.Default.DateRange,
                                             contentDescription = "Calendar"
                                         )
                                     }
                                 }
-                            }
-                        }
+                            }                        }
 
                         if (!hasApiKey) {
                             Surface(
@@ -285,8 +337,7 @@ fun DashboardScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(start = 24.dp, end = 24.dp)
-                            ) {
-                            }
+                            ) {}
                             Row(
                                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
                                 verticalAlignment = Alignment.CenterVertically

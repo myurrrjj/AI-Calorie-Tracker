@@ -1,49 +1,47 @@
 package com.myurrrjj.trackabite.ui.home.components
 
-import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateIntAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Insights
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.CircularWavyProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.WavyProgressIndicatorDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.myurrrjj.trackabite.local.MealLog
 import com.myurrrjj.trackabite.ui.Utils.bouncyClick
+import kotlin.math.roundToInt
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Suppress("UNUSED_PARAMETER")
 @Composable
 fun CalorieProgressCard(
     currentCalories: Int,
@@ -55,131 +53,168 @@ fun CalorieProgressCard(
     modifier: Modifier = Modifier
 ) {
     val animatedCalories by animateIntAsState(
-        targetValue = currentCalories,
-        animationSpec = spring(stiffness = Spring.StiffnessLow),
-        label = "Calories"
+        targetValue = currentCalories, animationSpec = spring(
+            stiffness = Spring.StiffnessLow
+        )
     )
-    val progress = (animatedCalories.toFloat() / targetCalories.toFloat())
-    val visualProgress = progress.coerceIn(0f, 1f)
-    val percentage = (progress * 100).toInt()
+
+    val progressTarget = if (targetCalories > 0) {
+        (currentCalories.toFloat() / targetCalories).coerceIn(0f, 1f)
+    } else {
+        0f
+    }
 
     val animatedProgress by animateFloatAsState(
-        targetValue = visualProgress, animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow
-        ), label = "Progress"
+        targetValue = progressTarget, animationSpec = spring(
+            dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessLow
+        )
     )
 
-    val infiniteTransition = rememberInfiniteTransition(label = "PulseTransition")
-    val pulseDuration = if (percentage < 120) 1000 else if (percentage in 120..150) 500 else 100
+    val percentage = if (targetCalories > 0) {
+        (animatedCalories.toFloat() / targetCalories * 100).roundToInt().coerceAtLeast(0)
+    } else {
+        0
+    }
 
-    val pulseScale by infiniteTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = if (progress > 0.8f) 1.05f else 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(pulseDuration), repeatMode = RepeatMode.Reverse
-        ),
-        label = "PulseScale"
-    )
+    val goalStatus = when {
+        targetCalories <= 0 -> "Set a goal"
+        animatedCalories < targetCalories -> "${targetCalories - animatedCalories} kcal left"
+        animatedCalories == targetCalories -> "Goal reached"
+        else -> "${animatedCalories - targetCalories} kcal over"
+    }
+
+    val contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .wrapContentHeight()
+            .heightIn(min = 200.dp)
             .bouncyClick(onClick = onClick),
-        shape = RoundedCornerShape(32.dp),
+        shape = RoundedCornerShape(28.dp),
         color = MaterialTheme.colorScheme.primaryContainer,
-        tonalElevation = 8.dp
+        tonalElevation = 2.dp
     ) {
-
-        Row(
-            modifier = Modifier.padding(24.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp)
+                .heightIn(min = 182.dp),
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Column(
-                modifier = Modifier.weight(1f), verticalArrangement = Arrangement.Center
+            Row(
+                modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically
             ) {
-                Surface(
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.bouncyClick { onEditClick() }) {
-                    Text(
-                        text = "Daily Goal: $targetCalories",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                Text(
+                    text = "GOAL",
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.ExtraBold, letterSpacing = 0.5.sp
+                    ),
+                    color = contentColor,
+                    maxLines = 1
+                )
+
+                IconButton(
+                    onClick = onEditClick,
+                    shape = CircleShape,
+                    colors = IconButtonDefaults.iconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Edit,
+                        contentDescription = "Edit daily calorie goal",
+                        modifier = Modifier.size(19.dp)
                     )
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Text(
-                    text = "$animatedCalories", style = MaterialTheme.typography.displayMedium.copy(
-                        fontWeight = FontWeight.Black, fontSize = 48.sp, letterSpacing = (-2).sp
-                    ), color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-
-                Text(
-                    text = "kcal consumed",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Medium),
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f)
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Surface(
-                    color = MaterialTheme.colorScheme.tertiaryContainer,
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier.bouncyClick { onChartClick() }
+                IconButton(
+                    onClick = onChartClick,
+                    shape = CircleShape,
+                    colors = IconButtonDefaults.iconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            Icons.Rounded.Insights,
-                            contentDescription = "Trends",
-                            tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            "View Trends",
-                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onTertiaryContainer
-                        )
-                    }
+                    Icon(
+                        imageVector = Icons.Rounded.Insights,
+                        contentDescription = "View calorie trends",
+                        modifier = Modifier.size(19.dp)
+                    )
                 }
             }
 
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier.graphicsLayer { scaleX = pulseScale; scaleY = pulseScale }) {
-                CircularProgressIndicator(
-                    progress = { 1f },
-                    modifier = Modifier.size(110.dp),
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(0.1f),
-                    strokeWidth = 14.dp,
-                    trackColor = Color.Transparent
-                )
+            Column(
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    Text(
+                        text = "$animatedCalories",
+                        style = MaterialTheme.typography.headlineMedium.copy(
+                            fontWeight = FontWeight.Black, fontSize = 30.sp, letterSpacing = (-1).sp
+                        ),
+                        color = contentColor,
+                        maxLines = 1
+                    )
 
-                CircularWavyProgressIndicator(
-                    progress = { animatedProgress },
-                    modifier = Modifier
-                        .size(110.dp)
-                        .padding(10.dp),
-                    color = MaterialTheme.colorScheme.primary,
-                    trackColor = Color.Transparent,
-                    trackStroke = WavyProgressIndicatorDefaults.circularTrackStroke,
-                    amplitude = WavyProgressIndicatorDefaults.indicatorAmplitude,
-                    wavelength = WavyProgressIndicatorDefaults.CircularWavelength,
-                    waveSpeed = WavyProgressIndicatorDefaults.CircularWavelength,
-                    stroke = WavyProgressIndicatorDefaults.circularIndicatorStroke
-                )
+                    Spacer(Modifier.width(5.dp))
+
+                    Text(
+                        text = "kcal",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = contentColor.copy(alpha = 0.75f),
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    )
+                }
 
                 Text(
-                    text = "$percentage%",
-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black),
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                    text = if (targetCalories > 0) {
+                        "of $targetCalories kcal target"
+                    } else {
+                        "Set a daily calorie goal"
+                    },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = contentColor.copy(alpha = 0.7f)
+                )
+            }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(9.dp)
+                    .clip(CircleShape)
+                    .background(contentColor.copy(alpha = 0.14f))
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .fillMaxWidth(animatedProgress)
+                        .background(
+                            color = MaterialTheme.colorScheme.primary, shape = CircleShape
+                        )
+                )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = if (targetCalories > 0) "$percentage% used" else "No goal",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.SemiBold
+                    ),
+                    color = contentColor.copy(alpha = 0.75f)
+                )
+
+                Spacer(Modifier.weight(1f))
+
+                Text(
+                    text = goalStatus, style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Bold
+                    ), color = contentColor, textAlign = TextAlign.End, maxLines = 1
                 )
             }
         }

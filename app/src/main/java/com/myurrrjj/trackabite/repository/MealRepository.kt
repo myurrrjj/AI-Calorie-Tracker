@@ -303,7 +303,7 @@ private fun createMealThumbnail(
         sourceBitmap.height
     )
 
-    if (largestDimension <= maxMegapixels) {
+    if (largestDimension <= MAX_THUMBNAIL_DIMENSION) {
         return sourceBitmap
     }
 
@@ -575,6 +575,7 @@ class OfflineMealRepository(
         }
     }
 
+
     override suspend fun getAvailableModels(): Result<List<GeminiModelOption>> = withContext(
         Dispatchers.IO
     ) {
@@ -588,12 +589,10 @@ class OfflineMealRepository(
                     model.supportedActions().orElse(emptyList()).contains("generateContent")
                 }.filter { model ->
                     val name = model.name().orElse("").lowercase()
+                    name.contains("gemini") && !name.contains("nano")
+                    (name.contains("flash") || name.contains("pro"))
+//                    !name.contains("Nano")
 
-                    !name.contains("image") && !name.contains("imagen") && !name.contains("veo") && !name.contains(
-                        "lyria"
-                    ) && !name.contains("nano") && !name.contains("tts") && !name.contains("antigravity") && !name.contains(
-                        "research"
-                    )
                 }.mapNotNull { model ->
                     val name = model.name().orElse(null) ?: return@mapNotNull null
 

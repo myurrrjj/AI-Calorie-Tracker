@@ -1,5 +1,6 @@
 package com.myurrrjj.trackabite.ui.analytics.chart
 
+import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
@@ -43,6 +44,7 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AnalyticsChartScreen(
+//    animatedVisibilityScope: AnimatedVisibilityScope,
     viewModel: AnalyticsViewModel,
     onNavigateBack: () -> Unit
 ) {

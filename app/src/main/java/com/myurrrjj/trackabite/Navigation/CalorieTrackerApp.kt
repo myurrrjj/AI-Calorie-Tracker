@@ -1,5 +1,9 @@
 package com.myurrrjj.trackabite.Navigation
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.animate
+import androidx.compose.animation.core.animateDecay
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -80,15 +84,67 @@ fun CalorieTrackerApp(
             )
         }
 
-        composable<AnalyticsChartRoute> {
-            val analyticsViewModel: AnalyticsViewModel = viewModel(factory = AnalyticsViewModel.Factory)
+        composable<AnalyticsChartRoute>(
+            enterTransition = {
+                slideIntoContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Start,
+                    animationSpec = tween(300)
+                )
+            },
+            exitTransition = {
+                slideOutOfContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Start,
+                    animationSpec = tween(300)
+                )
+            },
+            popEnterTransition = {
+                slideIntoContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.End,
+                    animationSpec = tween(300)
+                )
+            },
+            popExitTransition = {
+                slideOutOfContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.End,
+                    animationSpec = tween(300)
+                )
+            }
+        ) {
+            val analyticsViewModel: AnalyticsViewModel =
+                viewModel(factory = AnalyticsViewModel.Factory)
+
             AnalyticsChartScreen(
                 viewModel = analyticsViewModel,
                 onNavigateBack = { navController.navigateUp() }
             )
         }
 
-        composable<SettingsRoute> {
+        composable<SettingsRoute>(
+            enterTransition = {
+                slideIntoContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Start,
+                    animationSpec = tween(300)
+                )
+            },
+            exitTransition = {
+                slideOutOfContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Start,
+                    animationSpec = tween(300)
+                )
+            },
+            popEnterTransition = {
+                slideIntoContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.End,
+                    animationSpec = tween(300)
+                )
+            },
+            popExitTransition = {
+                slideOutOfContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.End,
+                    animationSpec = tween(300)
+                )
+            }
+        ) {
             SettingsScreen(
                 viewModel = mealViewModel,
                 initialProfile = profile,
@@ -96,7 +152,9 @@ fun CalorieTrackerApp(
                     preferences.saveProfile(p)
                     mealViewModel.refreshHealthData()
                 },
-                onNavigateToApiGuide = { navController.navigate(ApiKeySetupRoute) },
+                onNavigateToApiGuide = {
+                    navController.navigate(ApiKeySetupRoute)
+                },
                 onBack = { navController.navigateUp() }
             )
         }

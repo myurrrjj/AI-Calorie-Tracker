@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -33,6 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.myurrrjj.trackabite.health.HealthConnectManager
 import com.myurrrjj.trackabite.local.MealLog
+
 //import com.myurrrjj.trackabite.ui.home.CalorieProgressCard
 //import com.myurrrjj.trackabite.ui.home.MealItemCard2
 
@@ -77,16 +79,21 @@ fun DayView(
                 Column {
                     Spacer(modifier = Modifier.height(16.dp))
                     AnimatedVisibility(visible = !showDailyAnalytics) {
-                        Column {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             EnergyBurnCard(
                                 activeCalories = activeCalories,
                                 basalCalories = basalCalories,
                                 isBasalEstimated = isBasalEstimated,
                                 healthConnectManager = healthConnectManager,
-                                onPermissionsGranted = { onHealthPermissionsGranted() }
+                                onPermissionsGranted = { onHealthPermissionsGranted() },
+                                modifier = Modifier.weight(1f)
                             )
 
-                            Spacer(modifier = Modifier.height(16.dp))
+//                            Spacer(modifier = Modifier.height(16.dp))
 
                             CalorieProgressCard(
                                 currentCalories = totalCalories,
@@ -94,16 +101,18 @@ fun DayView(
                                 onEditClick = onEditGoal,
                                 activeMealId = activeMealId,
                                 onClick = onCardClick,
-                                modifier = Modifier.sharedBounds(
-                                    rememberSharedContentState("detailscreen"),
-                                    resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds(),
-                                    animatedVisibilityScope = this@AnimatedVisibility
-                                ),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .sharedBounds(
+                                        rememberSharedContentState("detailscreen"),
+                                        resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds(),
+                                        animatedVisibilityScope = this@AnimatedVisibility
+                                    ),
                                 onChartClick = onNavigateToAnalyticsChart
                             )
                         }
                     }
-                    Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(24.dp))
 
                     Text(
                         text = "Recent Meals",
@@ -131,9 +140,9 @@ fun DayView(
             } else {
                 items(items = meals, key = { it.id }) { meal ->
 
-                     val currentOnLongClick by rememberUpdatedState(onMealLongClick)
-    val currentOnDelete by rememberUpdatedState(onDelete)
-    val currentOnQuantity by rememberUpdatedState(onQuantitySelected)
+                    val currentOnLongClick by rememberUpdatedState(onMealLongClick)
+                    val currentOnDelete by rememberUpdatedState(onDelete)
+                    val currentOnQuantity by rememberUpdatedState(onQuantitySelected)
 
                     AnimatedVisibility(
                         visible = meal != activeMealId,
@@ -164,7 +173,13 @@ fun DayView(
                                     ),
                                 sharedTransitionScope = sharedTransitionScope,
                                 animatedVisibilityScope = this@AnimatedVisibility,
-                                onQuantitySelect = remember(meal.id) { { m, q -> currentOnQuantity(m, q) } },
+                                onQuantitySelect = remember(meal.id) {
+                                    { m, q ->
+                                        currentOnQuantity(
+                                            m, q
+                                        )
+                                    }
+                                },
 
                                 )
                         }

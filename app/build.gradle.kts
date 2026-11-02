@@ -29,7 +29,7 @@ android {
         applicationId = "com.myurrrjj.trackabite"
         minSdk = 26
         targetSdk = 37
-        versionCode = 4
+        versionCode = 5
         versionName = "1.0"
 
         val localProperties = Properties()
@@ -72,8 +72,8 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            buildConfigField("boolean", "DEBUG_MODE","false")
-            signingConfig = signingConfigs.getByName("debug")
+//            buildConfigField("boolean", "DEBUG_MODE","false")
+            signingConfig = signingConfigs.getByName("release")
         }
 
     }
