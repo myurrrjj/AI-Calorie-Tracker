@@ -16,6 +16,7 @@ import com.myurrrjj.trackabite.repository.HealthRepository
 import com.myurrrjj.trackabite.repository.MealRepository
 import com.myurrrjj.trackabite.repository.UserPreferencesRepository
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -26,6 +27,7 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -36,7 +38,7 @@ import kotlin.random.Random
 
 fun isSameDay(date: LocalDate, timestamp: Long): Boolean {
     val logDate =
-        java.time.Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).toLocalDate()
+        Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).toLocalDate()
     return date == logDate
 }
 
@@ -56,27 +58,25 @@ class MealViewModel(
     private val _selectedModel = MutableStateFlow<GeminiModelOption?>(null)
 
     val selectedModel: StateFlow<GeminiModelOption?> = _selectedModel.asStateFlow()
-    val currentStreak : StateFlow<Int> = repository.getMealHistory()
-        .map { meals->
+    val currentStreak: StateFlow<Int> = repository.getMealHistory().map { meals ->
             val uniqueDates = meals.map {
                 Instant.ofEpochMilli(it.timeStamp).atZone(ZoneId.systemDefault()).toLocalDate()
 
             }.toSet()
             var streak = 0
             var checkDate = LocalDate.now()
-            if (!uniqueDates.contains(checkDate)){
+            if (!uniqueDates.contains(checkDate)) {
                 checkDate = checkDate.minusDays(1)
 
             }
-            while (uniqueDates.contains(checkDate)){
+            while (uniqueDates.contains(checkDate)) {
                 streak++
                 checkDate = checkDate.minusDays(1)
 
 
             }
             streak
-        }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000),0)
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
     val hasApiKey: StateFlow<Boolean> =
         preferencesRepository.apiKey.map { !it.isNullOrBlank() }.stateIn(
             viewModelScope,
@@ -84,7 +84,15 @@ class MealViewModel(
             !preferencesRepository.getApiKey().isNullOrBlank()
         )
 
-    private val _errorMessage = MutableStateFlow<String?>(null)
+    private val errorChannel = Channel<String>()
+    val errorFlow = errorChannel.receiveAsFlow()
+
+    private fun triggerError(message: String) {
+        viewModelScope.launch {
+            errorChannel.send(message)
+        }
+    }
+
     private val _pendingMeals = MutableStateFlow<List<MealLog>>(emptyList())
     private val _targetCalories = MutableStateFlow(preferencesRepository.getTargetCalories())
 
@@ -118,7 +126,6 @@ class MealViewModel(
     fun loadAvailableModels() {
         viewModelScope.launch {
             repository.getAvailableModels().onSuccess { models ->
-                _errorMessage.value = null
                 _availableModels.value = models
 
                 val savedModelName = preferencesRepository.getSelectedModelName()
@@ -129,14 +136,16 @@ class MealViewModel(
 
 
             }.onFailure { exception ->
-                _errorMessage.value = exception.localizedMessage ?: "Failed to load AI models"
+//                errorFlow.value = exception.localizedMessage ?: "Failed to load AI models"
+                triggerError(exception.localizedMessage ?: "Failed to load AI models")
             }
+
         }
     }
 
 
     private fun pickDefaultModel(models: List<GeminiModelOption>): GeminiModelOption? {
-        val preferred = listOf("gemini-3.8-flash", "gemini-3.5-flash-lite")
+        val preferred = listOf("gemini-3.6-flash", "gemini-3.5-flash-lite")
         preferred.forEach { wanted ->
             models.firstOrNull { it.name.equals(wanted, ignoreCase = true) }?.let { return it }
         }
@@ -159,12 +168,10 @@ class MealViewModel(
                 date.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
             combine(
-                repository.getMealsForDay(startOfDay, endOfDay),
-                _targetCalories,
-                _pendingMeals,
-                _errorMessage,
+                repository.getMealsForDay(startOfDay, endOfDay), _targetCalories, _pendingMeals,
+//                _errorMessage,
                 _refreshHealthData
-            ) { dbMeals, target, pendingMeals, error, _ ->
+            ) { dbMeals, target, pendingMeals, _ ->
 
                 val relevantPending = pendingMeals.filter { isSameDay(date, it.timeStamp) }
 
@@ -173,7 +180,7 @@ class MealViewModel(
                 val energyBurn = healthRepository.getEnergyBurnForDay(date)
 
                 val profile = preferencesRepository.profile.value
-                val weight = profile?.weightKg?:60f
+                val weight = profile?.weightKg ?: 60f
                 val defaultCarbs = (target * 0.50f / 4f).toInt()
                 val defaultFat = (target * 0.30f / 9f).toInt()
 
@@ -190,20 +197,24 @@ class MealViewModel(
                     basalCalories = energyBurn.basalCalories,
                     isBasalEstimated = energyBurn.isEstimated,
                     isLoading = relevantPending.isNotEmpty(),
-                    errorMessage = error,
                     currentDate = date,
                     targetCalories = target,
-                    targetProtein = preferencesRepository.getTargetProtein().takeIf { it > 0 } ?: defaultProtein,
-                    targetCarbs = preferencesRepository.getTargetCarbs().takeIf { it > 0 } ?: defaultCarbs,
-                    targetFat = preferencesRepository.getTargetFat().takeIf { it > 0 } ?: defaultFat,
-                    targetFiber = preferencesRepository.getTargetFiber().takeIf { it > 0 } ?: defaultFiber,
-                    targetSugar = preferencesRepository.getTargetSugar().takeIf { it > 0 } ?: defaultSugar)
+                    targetProtein = preferencesRepository.getTargetProtein().takeIf { it > 0 }
+                        ?: defaultProtein,
+                    targetCarbs = preferencesRepository.getTargetCarbs().takeIf { it > 0 }
+                        ?: defaultCarbs,
+                    targetFat = preferencesRepository.getTargetFat().takeIf { it > 0 }
+                        ?: defaultFat,
+                    targetFiber = preferencesRepository.getTargetFiber().takeIf { it > 0 }
+                        ?: defaultFiber,
+                    targetSugar = preferencesRepository.getTargetSugar().takeIf { it > 0 }
+                        ?: defaultSugar)
             }.flowOn(Dispatchers.Default)
         }
     }
 
     fun updateAllTargets(cal: Int, pro: Int, carb: Int, fat: Int, fib: Int, sug: Int) {
-       preferencesRepository.updateTargetCalories(cal)
+        preferencesRepository.updateTargetCalories(cal)
         preferencesRepository.updateTargetProtein(pro)
         preferencesRepository.updateTargetCarbs(carb)
         preferencesRepository.updateTargetFat(fat)
@@ -238,21 +249,32 @@ class MealViewModel(
 
         _pendingMeals.value = listOf(optimisticMeal) + _pendingMeals.value
         viewModelScope.launch {
-            _errorMessage.value = null
+//            _errorMessage.value = null
             val uriString = imageUri?.toString()
 
             val result = repository.addMealLog(uriString, userText, date, modelName)
 
-            _pendingMeals.value = _pendingMeals.value.filter { it.id != tempId }
+            result.onSuccess {
+                _pendingMeals.value = _pendingMeals.value.filter { it.id != tempId }
 
-            result.onFailure { exception ->
-                _errorMessage.value = exception.localizedMessage ?: "Unknown Error Occurred"
+            }.onFailure { exception ->
+                _pendingMeals.value = _pendingMeals.value.map { meal ->
+                    if (meal.id == tempId){
+                        meal.copy(aiResponse = "Analysis Failed. Tap to retry").apply {
+                            isAnalysing = false
+                            hasError = true
+                        }
+                    }else{
+                        meal
+                    }
+                }
+                triggerError(exception.localizedMessage ?: "Unknown Error Occurred")
             }
         }
     }
 
     fun deleteMeal(meal: MealLog) {
-        if (meal.isAnalysing) {
+        if (meal.isAnalysing || meal.hasError) {
             _pendingMeals.value = _pendingMeals.value.filter { it.id != meal.id }
         } else {
             viewModelScope.launch {
@@ -261,16 +283,17 @@ class MealViewModel(
         }
     }
 
-    fun errorShown() {
-        _errorMessage.value = null
-    }
+//    fun errorShown() {
+//        _errorMessage.value = null
+//    }
 
     fun quickLogSavedMeal(savedMeal: SavedMeal, date: LocalDate) {
         viewModelScope.launch {
-            _errorMessage.value = null
+//            _errorMessage.value = null
             val result = repository.quickLogSavedMeal(savedMeal, date)
             result.onFailure { exception ->
-                _errorMessage.value = exception.localizedMessage ?: "Error Logging Saved Meal"
+//                _errorMessage.value = exception.localizedMessage ?: "Error Logging Saved Meal"
+                triggerError(exception.localizedMessage ?: "Error Logging Saved Meal")
             }
         }
     }

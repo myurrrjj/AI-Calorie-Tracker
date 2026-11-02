@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -61,6 +62,7 @@ fun MealItemCard2(
     meal: MealLog,
     onDelete: () -> Unit,
     onLongClick: () -> Unit,
+    onRetry: () -> Unit,
     onQuantitySelect: (MealLog, Float) -> Unit,
     modifier: Modifier = Modifier,
     sharedTransitionScope: SharedTransitionScope,
@@ -95,14 +97,20 @@ fun MealItemCard2(
             .fillMaxWidth()
             .graphicsLayer { alpha = animatedAlpha }
             .bouncyClick(onClick = {
-                if (!meal.isAnalysing) onLongClick()
+                when{
+                    meal.hasError -> onRetry()
+                    !meal.isAnalysing-> onLongClick()
+
+                }
             }, onLongPress = {
-                if (!meal.isAnalysing) onLongClick()
-            }),
+                if (!meal.isAnalysing && !meal.hasError) onLongClick()            }),
         shape = RoundedCornerShape(24.dp),
-        color = if (meal.isAnalysing) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
-        else MaterialTheme.colorScheme.surfaceContainerLow,
-        tonalElevation = if (meal.isAnalysing) 0.dp else 4.dp,
+        color = when {
+            meal.isAnalysing -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+            meal.hasError -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.8f)
+            else -> MaterialTheme.colorScheme.surfaceContainerLow
+        },
+        tonalElevation = if (meal.isAnalysing || meal.hasError) 0.dp else 4.dp,
         shadowElevation = if (meal.isAnalysing) 0.dp else 2.dp
     ) {
         Row(
@@ -111,8 +119,11 @@ fun MealItemCard2(
             Surface(
                 modifier = Modifier.size(56.dp),
                 shape = RoundedCornerShape(16.dp),
-                color = if (meal.isAnalysing) MaterialTheme.colorScheme.surface
-                else MaterialTheme.colorScheme.secondaryContainer
+                color = when {
+                    meal.isAnalysing -> MaterialTheme.colorScheme.surface
+                    meal.hasError -> MaterialTheme.colorScheme.errorContainer
+                    else -> MaterialTheme.colorScheme.secondaryContainer
+                }
             ) {
                 Box(
                     contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()
@@ -143,6 +154,21 @@ fun MealItemCard2(
                             )
                         }
                     }
+                    else if (meal.hasError) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.Black.copy(alpha = 0.4f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Default.Refresh,
+                                contentDescription = "Retry",
+                                tint = Color.White,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
                 }
             }
 
@@ -154,8 +180,7 @@ fun MealItemCard2(
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold, letterSpacing = 0.sp
                     ),
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
+                    color = if (meal.hasError) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurface,                    maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
 
@@ -168,7 +193,17 @@ fun MealItemCard2(
                         fontStyle = FontStyle.Italic,
                         color = MaterialTheme.colorScheme.primary
                     )
-                } else {
+                }
+                else if (meal.hasError) {
+                    Text(
+                        text = meal.aiResponse,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.error,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                else {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)

@@ -27,14 +27,18 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.HelpOutline
 import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.PrivacyTip
 import androidx.compose.material.icons.rounded.VpnKey
 import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -54,10 +58,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -66,6 +72,9 @@ import com.myurrrjj.trackabite.local.UserProfile
 import com.myurrrjj.trackabite.ui.MealViewModel
 import com.myurrrjj.trackabite.ui.Utils.ExpressiveTextField
 import com.myurrrjj.trackabite.ui.profile.ProfileForm
+
+private const val PRIVACY_POLICY_URL = "https://myurrrjj.github.io/trackabite-privacy/"
+private const val DATA_DELETION_URL = "https://myurrrjj.github.io/trackabite-privacy/data-deletion.html"
 
 private enum class SettingSection { PROFILE, API_KEY, MODEL }
 
@@ -92,6 +101,7 @@ fun SettingsScreen(
 ) {
     val models by viewModel.availableModels.collectAsStateWithLifecycle()
     val selectedModel by viewModel.selectedModel.collectAsStateWithLifecycle()
+    val uriHandler = LocalUriHandler.current
 
     var keyInput by remember { mutableStateOf(viewModel.getApiKey() ?: "") }
     var keyVisible by remember { mutableStateOf(false) }
@@ -290,8 +300,79 @@ fun SettingsScreen(
                 }
             }
 
+            Spacer(Modifier.height(24.dp))
+
+            Surface(
+                shape = RoundedCornerShape(28.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                tonalElevation = 3.dp,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column {
+                    LegalRow(
+                        icon = Icons.Rounded.PrivacyTip,
+                        title = "Privacy Policy",
+                        onClick = { uriHandler.openUri(PRIVACY_POLICY_URL) }
+                    )
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = 18.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant
+                    )
+                    LegalRow(
+                        icon = Icons.Rounded.DeleteOutline,
+                        title = "How to delete your data",
+                        onClick = { uriHandler.openUri(DATA_DELETION_URL) }
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(14.dp))
+            Text(
+                text = "TrackABite · data stays on your device",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
+
             Spacer(Modifier.height(40.dp))
         }
+    }
+}
+
+@Composable
+private fun LegalRow(
+    icon: ImageVector,
+    title: String,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 18.dp, vertical = 18.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(22.dp)
+        )
+        Spacer(Modifier.width(14.dp))
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f)
+        )
+        Icon(
+            imageVector = Icons.AutoMirrored.Rounded.OpenInNew,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(18.dp)
+        )
     }
 }
 

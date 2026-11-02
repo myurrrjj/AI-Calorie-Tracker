@@ -1,5 +1,6 @@
 package com.myurrrjj.trackabite.network
 
+import android.R
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Log
@@ -15,8 +16,11 @@ import com.google.genai.types.GenerateContentConfig
 import com.google.genai.types.GoogleSearch
 import com.google.genai.types.Part
 import com.google.genai.types.Tool
+import com.myurrrjj.trackabite.local.AiMealResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.decodeFromStream
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import kotlin.coroutines.cancellation.CancellationException
@@ -28,9 +32,14 @@ class AiService {
 
     private val searchTool = Tool.builder().googleSearch(GoogleSearch.builder().build()).build()
 
-    private val config = GenerateContentConfig.builder().temperature(0.2f).topK(32f).topP(0.95f)
+    private val config = GenerateContentConfig.builder().temperature(0.2f).topK(32f).topP(0.95f).responseMimeType("application/json")
 //        .tools(listOf(searchTool))
         .build()
+
+    private val jsonParser = Json {
+        ignoreUnknownKeys = true
+        coerceInputValues = true
+    }
 
     private fun loadJpegBytes(localPath: String): ByteArray {
         val file = File(localPath)
@@ -139,9 +148,39 @@ vitaminD = mcg
 
             val rawString = response.text() ?: throw Exception("Empty response from AI")
 
-            val cleanedJsonString = rawString.replace("```json", "").replace("```", "").trim()
+            val parsedAiResponse = jsonParser.decodeFromString<AiMealResponse>(rawString)
 
-            val resultMeal = parseJsonToMealLog(cleanedJsonString, userText)
+//            val cleanedJsonString = rawString.replace("```json", "").replace("```", "").trim()
+//
+//            val resultMeal = parseJsonToMealLog(cleanedJsonString, userText)
+
+
+            val macros = MacroNutrients(
+                calories = parsedAiResponse.calories,
+                protein = parsedAiResponse.macros.protein.toInt(),
+                carbs = parsedAiResponse.macros.carbs.toInt(),
+                fat = parsedAiResponse.macros.fat.toInt(),
+                fiber = parsedAiResponse.macros.fiber.toInt(),
+                sugar = parsedAiResponse.macros.sugar.toInt()
+            )
+
+            val micros = MicroNutrients(
+                vitaminA = parsedAiResponse.micros.vitaminA.toDouble(),
+                vitaminC = parsedAiResponse.micros.vitaminC.toDouble(),
+                vitaminD = parsedAiResponse.micros.vitaminD.toDouble(),
+                iron = parsedAiResponse.micros.iron.toDouble(),
+                calcium = parsedAiResponse.micros.calcium.toDouble(),
+                sodium = parsedAiResponse.micros.sodium.toDouble(),
+                potassium = parsedAiResponse.micros.potassium.toDouble()
+            )
+
+            val resultMeal = MealLog(
+                userRequest = userText,
+                shortName = parsedAiResponse.shortNameOfMeal,
+                aiResponse = parsedAiResponse.aiResponse,
+                macros = macros,
+                micros = micros,
+            )
             Result.success(resultMeal)
         } catch (e: CancellationException) {
             throw e

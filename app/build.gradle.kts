@@ -29,7 +29,7 @@ android {
         applicationId = "com.myurrrjj.trackabite"
         minSdk = 26
         targetSdk = 37
-        versionCode = 5
+        versionCode = 6
         versionName = "1.0"
 
         val localProperties = Properties()
@@ -64,7 +64,7 @@ android {
             matchingFallbacks += listOf("release")
         }
         release {
-            applicationIdSuffix = ".tempRelease"
+//            applicationIdSuffix = ".tempRelease"
             isDebuggable = false
             isMinifyEnabled = true
             isShrinkResources = true
@@ -95,20 +95,19 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
 
-    implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
     implementation("com.google.genai:google-genai:1.40.0")
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("io.coil-kt:coil-compose:2.6.0")
-    implementation("androidx.security:security-crypto-ktx:1.1.0-alpha06")
+    implementation("androidx.security:security-crypto-ktx:1.1.0")
     implementation(libs.androidx.core.splashscreen)
     val room_version = "2.6.1"
     implementation("androidx.navigation:navigation-compose:2.8.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
     implementation("androidx.room:room-runtime:$room_version")
     implementation("androidx.room:room-ktx:$room_version")
-    ksp("androidx.room:room-compiler:2.6.1")
+    ksp("androidx.room:room-compiler:$room_version")
     implementation("androidx.health.connect:connect-client:1.1.0")
     implementation("androidx.exifinterface:exifinterface:1.4.2")
     implementation(platform(libs.androidx.compose.bom))

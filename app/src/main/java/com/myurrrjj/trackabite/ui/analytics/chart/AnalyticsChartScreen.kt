@@ -52,15 +52,8 @@ fun AnalyticsChartScreen(
     val selectedMacro by viewModel.selectedMacro.collectAsStateWithLifecycle()
     val selectedTimeRange by viewModel.selectedTimeRange.collectAsStateWithLifecycle()
 
-    val targetValue = remember(selectedMacro) {
-        when (selectedMacro) {
-            MacroType.CALORIES -> 2000f
-            MacroType.PROTEIN -> 150f
-            MacroType.CARBS -> 250f
-            MacroType.FAT -> 70f
-            MacroType.FIBER -> 30f
-            MacroType.SUGAR -> 50f
-        }
+    val targetValue = remember(selectedMacro, chartData) {
+        viewModel.getTargetForMacro(selectedMacro)
     }
 
     val yValues = remember(chartData, selectedMacro) {
@@ -151,6 +144,7 @@ fun AnalyticsChartScreen(
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
                         StatSummaryItem(label = "Average", value = animAvg, macro = selectedMacro)
+                        StatSummaryItem(label = "Goal", value = targetValue.toInt(), macro = selectedMacro)
                         StatSummaryItem(label = "Maximum", value = animMax, macro = selectedMacro)
                         StatSummaryItem(label = "Total", value = animTotal, macro = selectedMacro)
                     }
@@ -206,7 +200,7 @@ fun StatSummaryItem(label: String, value: Int, macro: MacroType) {
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Black,
             color = MaterialTheme.colorScheme.onSurface,
-            fontSize = 28.sp
+            fontSize = 22.sp
         )
         Text(
             text = label,

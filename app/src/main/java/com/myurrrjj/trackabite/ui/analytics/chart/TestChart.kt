@@ -26,7 +26,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,8 +42,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
-import androidx.health.connect.client.units.celsius
-import kotlinx.coroutines.delay
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -62,20 +59,29 @@ fun AnimatedMacroChart(
         data.map {
             when (selectedMacro) {
                 MacroType.CALORIES -> it.calories.toFloat()
-                MacroType.PROTEIN  -> it.protein.toFloat()
-                MacroType.CARBS    -> it.carbs.toFloat()
-                MacroType.FAT      -> it.fat.toFloat()
-                MacroType.FIBER    -> it.fiber.toFloat()
-                MacroType.SUGAR    -> it.sugar.toFloat()
+                MacroType.PROTEIN -> it.protein.toFloat()
+                MacroType.CARBS -> it.carbs.toFloat()
+                MacroType.FAT -> it.fat.toFloat()
+                MacroType.FIBER -> it.fiber.toFloat()
+                MacroType.SUGAR -> it.sugar.toFloat()
             }
         }
     }
 
-    val avg    = if (yValues.isNotEmpty()) yValues.average().toFloat() else 0f
-    val maxRaw = yValues.maxOrNull() ?: 1f
-    val targetMax = maxRaw.coerceAtLeast(targetValue * 1.25f).coerceAtLeast(1f)
-    val targetGoalFraction = if (targetMax > 0f) (targetValue / targetMax).coerceIn(0f, 1f) else 0f
-    val targetAvgFraction = if (targetMax > 0f) (avg / targetMax).coerceIn(0f, 1f) else 0f
+
+    val avg = if (yValues.isNotEmpty()) yValues.average().toFloat() else 0f
+    val maxRaw = yValues.maxOrNull() ?: 0f
+    val rawCeiling = maxOf(maxRaw * 1.15f, targetValue * 1.12f, 10f)
+    val stepSize = when (selectedMacro) {
+        MacroType.CALORIES -> 500f
+        MacroType.CARBS, MacroType.PROTEIN -> 50f
+        MacroType.FAT, MacroType.FIBER, MacroType.SUGAR -> 20f
+    }
+
+    val targetMax = (kotlin.math.ceil(rawCeiling / stepSize) * stepSize).coerceAtLeast(stepSize)
+
+    val targetGoalFraction = (targetValue / targetMax).coerceIn(0f, 1f)
+    val targetAvgFraction = (avg / targetMax).coerceIn(0f, 1f)
 
     val animatedGoalFraction by animateFloatAsState(
         targetValue = targetGoalFraction,
@@ -87,14 +93,14 @@ fun AnimatedMacroChart(
         animationSpec = tween(durationMillis = 700, easing = FastOutSlowInEasing),
         label = "avgFraction"
     )
-    val targetFractions = yValues.map { (it/targetMax).coerceIn(0f,1f) }
+    val targetFractions = yValues.map { (it / targetMax).coerceIn(0f, 1f) }
 
 
     val animatedMax by animateFloatAsState(
         targetValue = targetMax,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness    = Spring.StiffnessLow
+            stiffness = Spring.StiffnessLow
         ),
         label = "maxAnim"
     )
@@ -111,8 +117,8 @@ fun AnimatedMacroChart(
             targetValue = fraction,
             animationSpec = tween(
                 durationMillis = 700,
-                delayMillis    = (index * 40).coerceAtMost(1200),
-                easing         = FastOutSlowInEasing
+                delayMillis = (index * 40).coerceAtMost(1200),
+                easing = FastOutSlowInEasing
             ),
             label = "barHeight_$index"
         ).value
@@ -120,18 +126,19 @@ fun AnimatedMacroChart(
 
     var selectedIndex by remember { mutableStateOf<Int?>(null) }
 
-    val suffix      = if (selectedMacro == MacroType.CALORIES) "" else "g"
-    val formatValue = { v: Float -> NumberFormat.getNumberInstance(Locale.US).format(v.toInt()) + suffix }
+    val suffix = if (selectedMacro == MacroType.CALORIES) "" else "g"
+    val formatValue =
+        { v: Float -> NumberFormat.getNumberInstance(Locale.US).format(v.toInt()) + suffix }
 
-    val primary   = MaterialTheme.colorScheme.primary
+    val primary = MaterialTheme.colorScheme.primary
     val secondary = MaterialTheme.colorScheme.secondary
-    val error     = MaterialTheme.colorScheme.error
+    val error = MaterialTheme.colorScheme.error
     val goalColor = if (avg > targetValue) error else MaterialTheme.colorScheme.tertiary
 
-    val yAxisWidth    = 44.dp
-    val rightPadding  = 60.dp
+    val yAxisWidth = 52.dp
+    val rightPadding = 84.dp
     val labelAreaHeight = 36.dp
-    val gridLevels    = listOf(1f, .9f, .8f, .7f, .6f, .5f, .4f, .3f, .2f, .1f, 0f)
+    val gridLevels = listOf(1f, 0.75f, 0.5f, 0.25f, 0f)
 
     BoxWithConstraints(modifier = modifier) {
         val chartHeight = maxHeight - labelAreaHeight
@@ -169,18 +176,18 @@ fun AnimatedMacroChart(
                 .fillMaxWidth()
                 .padding(start = yAxisWidth, end = rightPadding),
             horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment     = Alignment.Bottom
+            verticalAlignment = Alignment.Bottom
         ) {
             yValues.forEachIndexed { i, value ->
-                val animVal   = animatedHeights[i]
-                val barFrac   = animVal
+                val animVal = animatedHeights[i]
+                val barFrac = animVal
 
 //                    if (animatedMax > 0f) (animVal / animatedMax).coerceIn(0f, 1f) else 0f
-                val ratio     = if (targetValue > 0f) value / targetValue else 0f
-                val barColor  = when {
+                val ratio = if (targetValue > 0f) value / targetValue else 0f
+                val barColor = when {
                     ratio < 0.8f -> lerp(primary.copy(alpha = 0.6f), primary, ratio / 0.8f)
-                    ratio <= 1f  -> lerp(primary, secondary, (ratio - 0.8f) / 0.2f)
-                    else         -> lerp(secondary, error, ((ratio - 1f) / 0.5f).coerceAtMost(1f))
+                    ratio <= 1f -> lerp(primary, secondary, (ratio - 0.8f) / 0.2f)
+                    else -> lerp(secondary, error, ((ratio - 1f) / 0.5f).coerceAtMost(1f))
                 }
 
                 Box(
@@ -196,10 +203,11 @@ fun AnimatedMacroChart(
                         )
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
-                            indication        = null
+                            indication = null
                         ) {
                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                            selectedIndex = if (selectedIndex == i) null else i }
+                            selectedIndex = if (selectedIndex == i) null else i
+                        }
                 )
             }
         }
@@ -248,20 +256,30 @@ fun AnimatedMacroChart(
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End,
-                    verticalAlignment     = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     HorizontalDivider(
                         modifier = Modifier.weight(1f),
-                        color    = goalColor.copy(alpha = 0.8f),
+                        color = goalColor.copy(alpha = 0.85f),
                         thickness = 2.dp
                     )
-                    Text(
-                        text     = "Goal",
-                        color    = goalColor,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 12.sp,
-                        modifier = Modifier.padding(horizontal = 6.dp)
-                    )
+                    Box(
+                        modifier = Modifier
+                            .padding(start = 4.dp)
+                            .background(
+                                color = goalColor.copy(alpha = 0.15f),
+                                shape = RoundedCornerShape(6.dp)
+                            )
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = "Goal: ${targetValue.toInt()}$suffix",
+                            color = goalColor,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 11.sp,
+                            maxLines = 1
+                        )
+                    }
                 }
             }
         }
@@ -283,16 +301,16 @@ fun AnimatedMacroChart(
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End,
-                    verticalAlignment     = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     HorizontalDivider(
-                        modifier  = Modifier.weight(1f),
-                        color     = primary.copy(alpha = 0.6f),
+                        modifier = Modifier.weight(1f),
+                        color = primary.copy(alpha = 0.6f),
                         thickness = 2.dp
                     )
                     Text(
-                        text     = "Avg: ${avg.toInt()}$suffix",
-                        color    = primary,
+                        text = "Avg: ${avg.toInt()}$suffix",
+                        color = primary,
                         fontSize = 12.sp,
                         modifier = Modifier.padding(horizontal = 6.dp)
                     )
@@ -307,20 +325,26 @@ fun AnimatedMacroChart(
                     .fillMaxWidth()
                     .padding(start = yAxisWidth, end = rightPadding),
                 horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment     = Alignment.Bottom
+                verticalAlignment = Alignment.Bottom
             ) {
                 yValues.forEachIndexed { i, value ->
                     Box(
-                        modifier = Modifier.weight(1f).fillMaxHeight(),
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
                         contentAlignment = Alignment.BottomCenter
                     ) {
                         if (selectedIndex == i) {
-                            val animVal  = animatedHeights[i]
-                            val barFrac  = animVal
+                            val animVal = animatedHeights[i]
+                            val barFrac = animVal
 
 //                                if (animatedMax > 0f) (animVal / animatedMax).coerceIn(0f, 1f) else 0f
-                            val dateStr  = SimpleDateFormat("MMM dd", Locale.US).format(Date(data[i].timestamp))
-
+                            val dateStr = SimpleDateFormat(
+                                "MMM dd",
+                                Locale.US
+                            ).format(Date(data[i].timestamp))
+                            val goalPct =
+                                if (targetValue > 0f) ((value / targetValue) * 100).toInt() else 0
                             Box(
                                 modifier = Modifier
                                     .fillMaxHeight(barFrac)
@@ -328,18 +352,31 @@ fun AnimatedMacroChart(
                                     .wrapContentHeight(Alignment.Top)
                                     .wrapContentWidth(unbounded = true)
                                     .zIndex(10f)
-                                    .offset(y=(-8).dp)
-                                    .background(Color(0xFF1E1E1E), RoundedCornerShape(8.dp))
-                                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                                    .offset(y = (-12).dp)
+                                    .background(
+                                        MaterialTheme.colorScheme.inverseSurface,
+                                        RoundedCornerShape(10.dp)
+                                    )
+                                    .padding(horizontal = 12.dp, vertical = 6.dp)
                             ) {
-                                Text(
-                                    text       = "${formatValue(value)} • $dateStr",
-                                    color      = Color.White,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize   = 14.sp,
-                                    maxLines   = 1,
-                                    softWrap   = false
-                                )
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(
+                                        text = "${formatValue(value)} • $dateStr",
+                                        color = MaterialTheme.colorScheme.inverseOnSurface,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp,
+                                        maxLines = 1,
+                                        softWrap = false
+                                    )
+                                    Text(
+                                        text = "$goalPct% of goal",
+                                        color = MaterialTheme.colorScheme.inverseOnSurface.copy(alpha = 0.75f),
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = 11.sp,
+                                        maxLines = 1,
+                                        softWrap = false
+                                    )
+                                }
                             }
                         }
                     }

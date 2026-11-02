@@ -24,8 +24,12 @@ data class MealLog(
     @Embedded
     val micros: MicroNutrients,
 
+
+
 ) {
 
+    @Ignore
+    var hasError:Boolean = false
     @Ignore
     var isAnalysing: Boolean = false
     val effectiveCalories: Int get() = (macros.calories * quantity).roundToInt()

@@ -57,6 +57,7 @@ fun DayView(
     onQuantitySelected: (MealLog, Float) -> Unit,
     onHealthPermissionsGranted: () -> Unit,
     onNavigateToAnalyticsChart: () -> Unit,
+    onRetry: (MealLog) -> Unit,
 ) {
     val listState = rememberLazyListState()
 
@@ -143,7 +144,7 @@ fun DayView(
                     val currentOnLongClick by rememberUpdatedState(onMealLongClick)
                     val currentOnDelete by rememberUpdatedState(onDelete)
                     val currentOnQuantity by rememberUpdatedState(onQuantitySelected)
-
+                    val currentOnRetry by rememberUpdatedState(onRetry)
                     AnimatedVisibility(
                         visible = meal != activeMealId,
                         enter = fadeIn() + scaleIn(),
@@ -180,8 +181,7 @@ fun DayView(
                                         )
                                     }
                                 },
-
-                                )
+                                onRetry = remember(meal.id) { { currentOnRetry(meal) } })
                         }
                     }
                 }

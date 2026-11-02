@@ -11,7 +11,7 @@ data class MealUiState(
     val basalCalories: Int = 0,
     val isBasalEstimated: Boolean =false,
 
-    val errorMessage: String? = null,
+//    val errorMessage: String? = null,
     val targetCalories: Int = 2000,
     val targetProtein: Int = 50,
     val targetCarbs: Int = 130,

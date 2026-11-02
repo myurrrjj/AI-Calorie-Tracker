@@ -79,6 +79,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
+import androidx.core.net.toUri
 
 private val HEADER_DATE_FORMATTER = DateTimeFormatter.ofPattern("EEEE, MMM d")
 
@@ -132,12 +133,11 @@ fun DashboardScreen(
         .collectAsStateWithLifecycle(MealUiState())
     val savedMeals by viewModel.savedMeals.collectAsStateWithLifecycle()
 
-    LaunchedEffect(currentUiState.errorMessage) {
-        currentUiState.errorMessage?.let { error ->
+    LaunchedEffect(Unit) {
+        viewModel.errorFlow.collect { error ->
             snackbarHostState.showSnackbar(
                 message = error, withDismissAction = true
             )
-            viewModel.errorShown()
         }
     }
 
@@ -387,26 +387,40 @@ fun DashboardScreen(
                             .collectAsStateWithLifecycle(MealUiState())
 
                         DayView(
+                            healthConnectManager = healthConnectManager,
                             meals = pageState.meals,
-                            sharedTransitionScope = this@SharedTransitionLayout,
+                            totalCalories = pageState.totalCalories,
+                            targetCalories = pageState.targetCalories,
+                            activeCalories = pageState.activeCalories,
+                            basalCalories = pageState.basalCalories,
+                            isBasalEstimated = pageState.isBasalEstimated,
                             activeMealId = activeMeal,
                             onDelete = { viewModel.deleteMeal(it) },
                             onEditGoal = { showTargetDialog = true },
                             onMealLongClick = { activeMeal = it },
+                            sharedTransitionScope = this@SharedTransitionLayout,
                             onCardClick = { showDailyAnalytics = true },
-                            totalCalories = pageState.totalCalories,
-                            targetCalories = pageState.targetCalories,
-                            isBasalEstimated = pageState.isBasalEstimated,
                             showDailyAnalytics = showDailyAnalytics,
                             onQuantitySelected = { mealLog, newQty ->
                                 viewModel.updateMealQuantity(mealLog, newQty)
                             },
-                            healthConnectManager = healthConnectManager,
                             onHealthPermissionsGranted = { viewModel.refreshHealthData() },
                             onNavigateToAnalyticsChart = onNavigateToAnalyticsChart,
-                            activeCalories = pageState.activeCalories,
-                            basalCalories = pageState.basalCalories
-                        )
+                            onRetry = { failedMeal ->
+                                viewModel.deleteMeal(failedMeal)
+
+                                val uri = failedMeal.imagePath?.toUri()
+
+                                val targetDate = Instant.ofEpochMilli(failedMeal.timeStamp)
+                                    .atZone(ZoneId.systemDefault())
+                                    .toLocalDate()
+
+                                viewModel.analyseAndAddMeal(
+                                    imageUri = uri,
+                                    userText = failedMeal.userRequest,
+                                    date = targetDate
+                                )
+                            }                        )
                     }
 
                     Box(
